@@ -16,6 +16,7 @@ export async function addMemberToLeague(formData: FormData) {
     const organizationId = formData.get("organizationId") as string;
     const leagueSlug = formData.get("leagueSlug") as string;
     const email = (formData.get("email") as string).toLowerCase();
+    const name = formData.get("name") as string;
     const role = formData.get("role") as "admin" | "player";
 
     // 1. Verify caller is admin
@@ -39,7 +40,11 @@ export async function addMemberToLeague(formData: FormData) {
     if (!targetUser) {
         [targetUser] = await db.insert(user).values({
             email,
+            name: name || null,
         }).returning();
+    } else if (name && !targetUser.name) {
+        // Update name if it wasn't set
+        await db.update(user).set({ name }).where(eq(user.id, targetUser.id));
     }
 
     // 3. Add to league if not already member

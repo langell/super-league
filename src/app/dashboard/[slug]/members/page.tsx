@@ -105,12 +105,22 @@ export default async function LeagueMembersPage({ params }: { params: { slug: st
                                 <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
                                     <UserPlus size={24} />
                                 </div>
-                                <h3 className="text-xl font-bold">Inivte Member</h3>
+                                <h3 className="text-xl font-bold">Invite Member</h3>
                             </div>
 
                             <form action={addMemberToLeague} className="space-y-4">
                                 <input type="hidden" name="organizationId" value={league.id} />
                                 <input type="hidden" name="leagueSlug" value={slug} />
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase">Full Name</label>
+                                    <input
+                                        name="name"
+                                        type="text"
+                                        placeholder="Tiger Woods"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors"
+                                    />
+                                </div>
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-zinc-500 uppercase">Email Address</label>

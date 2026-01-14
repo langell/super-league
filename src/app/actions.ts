@@ -2,8 +2,8 @@
 
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { eq, and } from "drizzle-orm";
-import { organizations, leagueMembers, courses, tees, user, holes, teams, teamMembers, seasons, rounds } from "@/db/schema";
+import { eq, and, asc } from "drizzle-orm";
+import { organizations, leagueMembers, courses, tees, user, holes, teams, teamMembers, seasons, rounds, matches, matchPlayers } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCourseDetails } from "@/lib/course-api";
@@ -901,4 +901,185 @@ export async function deleteRound(formData: FormData) {
 
     revalidatePath(`/dashboard/${leagueSlug}/schedule`);
     redirect(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function createMatch(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const roundId = formData.get("roundId") as string;
+    const team1Id = formData.get("team1Id") as string;
+    const team2Id = formData.get("team2Id") as string;
+
+    // Get League (Organization) ID for handicap lookup
+    const [league] = await db.select().from(organizations).where(eq(organizations.slug, leagueSlug)).limit(1);
+    if (!league) throw new Error("League not found");
+
+    // Create Match
+    const [match] = await db.insert(matches).values({
+        roundId,
+        format: 'match_play' // or maybe 'four_ball' if it's 2v2? Keep generic for now.
+    }).returning();
+
+    // Helper to add a whole team
+    const addTeam = async (teamId: string) => {
+        // Fetch all members of this team
+        const members = await db
+            .select({
+                userId: leagueMembers.userId,
+                handicap: leagueMembers.handicap,
+            })
+            .from(teamMembers)
+            .innerJoin(leagueMembers, eq(teamMembers.leagueMemberId, leagueMembers.id))
+            .where(eq(teamMembers.teamId, teamId));
+
+        // Add each member to the match
+        for (const member of members) {
+            await db.insert(matchPlayers).values({
+                matchId: match.id,
+                userId: member.userId,
+                teamId: teamId, // Important: Link them to the team within the match
+                startingHandicap: member.handicap ? member.handicap.toString() : null
+            });
+        }
+    };
+
+    if (team1Id) await addTeam(team1Id);
+    if (team2Id) await addTeam(team2Id);
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function deleteMatch(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const matchId = formData.get("matchId") as string;
+
+    await db.delete(matches).where(eq(matches.id, matchId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function generateSchedule(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const seasonId = formData.get("seasonId") as string;
+
+    // 1. Get League & Season
+    const [league] = await db.select().from(organizations).where(eq(organizations.slug, leagueSlug)).limit(1);
+    const [season] = await db.select().from(seasons).where(eq(seasons.id, seasonId)).limit(1);
+
+    if (!league || !season) throw new Error("Invalid league or season");
+
+    // 2. Get Teams
+    const allTeams = await db.select().from(teams).where(eq(teams.organizationId, league.id));
+    if (allTeams.length < 2) {
+        // Not enough teams to schedule
+        return;
+    }
+
+    // 3. Get Rounds (sorted by date)
+    const seasonRounds = await db
+        .select()
+        .from(rounds)
+        .where(eq(rounds.seasonId, seasonId))
+        .orderBy(asc(rounds.date));
+
+    if (seasonRounds.length === 0) return;
+
+    // 4. Round Robin Algorithm
+
+    // If odd number of teams, add a "BYE" (null)
+    // Actually, handling distinct types is annoying in TS, let's just use specific logic.
+    // Simpler: Just allow the array to be odd length and handle indices.
+
+    // Actually, adding a dummy object is easier logic-wise.
+    // Let's type it as Team | null.
+    let pool: (typeof allTeams[0] | null)[] = [...allTeams];
+    if (pool.length % 2 !== 0) {
+        pool.push(null); // The "Dummy"/Bye
+    }
+
+    const numTeams = pool.length; // Now always even
+    const numRounds = numTeams - 1; // Complete round robin
+    const half = numTeams / 2;
+
+    const roundPairings: Array<Array<[typeof allTeams[0], typeof allTeams[0]]>> = [];
+
+    for (let r = 0; r < numRounds; r++) {
+        const roundMatches: Array<[typeof allTeams[0], typeof allTeams[0]]> = [];
+        for (let i = 0; i < half; i++) {
+            const teamA = pool[i];
+            const teamB = pool[numTeams - 1 - i];
+
+            // If neither is null, it's a valid match
+            if (teamA && teamB) {
+                roundMatches.push([teamA, teamB]);
+            }
+        }
+        roundPairings.push(roundMatches);
+
+        // Rotate for next round (keep index 0 fixed, rotate the rest)
+        // [0, 1, 2, 3, 4, 5] -> [0, 5, 1, 2, 3, 4]
+        pool = [
+            pool[0],
+            pool[pool.length - 1],
+            ...pool.slice(1, pool.length - 1)
+        ];
+    }
+
+    // 5. Assign Assignments to Rounds
+    // If we have more rounds than pairings, we cycle through them modulo available pairings.
+
+    for (let i = 0; i < seasonRounds.length; i++) {
+        const round = seasonRounds[i];
+
+        // Skip if round already has matches (to prevent duplication)
+        const existingMatches = await db.select().from(matches).where(eq(matches.roundId, round.id));
+        if (existingMatches.length > 0) continue;
+
+        // Get pairings for this week
+        const weekPairings = roundPairings[i % roundPairings.length];
+
+        // Create matches in DB
+        for (const [teamA, teamB] of weekPairings) {
+            // Create Match
+            const [newMatch] = await db.insert(matches).values({
+                roundId: round.id,
+                format: 'match_play'
+            }).returning();
+
+            // Helper to fetch members and insert
+            // Note: We need to recreate the insertTeamMembers logic as we are in a new scope now
+            const insertTeamMembers = async (tId: string) => {
+                const members = await db
+                    .select({
+                        userId: leagueMembers.userId,
+                        handicap: leagueMembers.handicap,
+                    })
+                    .from(teamMembers)
+                    .innerJoin(leagueMembers, eq(teamMembers.leagueMemberId, leagueMembers.id))
+                    .where(eq(teamMembers.teamId, tId));
+
+                for (const member of members) {
+                    await db.insert(matchPlayers).values({
+                        matchId: newMatch.id,
+                        userId: member.userId,
+                        teamId: tId,
+                        startingHandicap: member.handicap ? member.handicap.toString() : null
+                    });
+                }
+            };
+
+            await insertTeamMembers(teamA.id);
+            await insertTeamMembers(teamB.id);
+        }
+    }
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
 }

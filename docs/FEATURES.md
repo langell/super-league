@@ -29,7 +29,7 @@
 ### 5. Scheduling & Competition
 - [x] **Seasons**: Define active periods (e.g., "Spring 2026").
 - [x] **Rounds**: Schedule events (Auto-populate or manual).
-- [ ] **Matches**: Generate pairings for rounds.
+- [x] **Matches**: Generate pairings for rounds.
 
 ### 6. Scoring & Handicaps
 - [ ] **Score Entry**: UI for inputting hole-by-hole scores.

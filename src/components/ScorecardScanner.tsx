@@ -160,17 +160,25 @@ export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
 
                                     <div className="grid grid-cols-9 gap-1">
                                         {tee.holes.slice(0, 9).map(h => (
-                                            <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg">
-                                                <div className="text-[10px] text-zinc-600 mb-1">{h.holeNumber}</div>
-                                                <div className="text-xs font-bold">{h.par}</div>
+                                            <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg flex flex-col justify-between h-20">
+                                                <div className="text-[10px] text-zinc-600 font-bold">{h.holeNumber}</div>
+                                                <div className="text-sm font-black text-white">{h.par}</div>
+                                                <div className="flex justify-between w-full px-1">
+                                                    <span className="text-[9px] text-zinc-500 font-mono tracking-tighter" title="Yardage">{h.yardage || '-'}</span>
+                                                    <span className="text-[9px] text-emerald-500 font-mono font-bold tracking-tighter" title="Handicap">{h.handicapIndex}</span>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-9 gap-1 mt-1">
                                         {tee.holes.slice(9, 18).map(h => (
-                                            <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg">
-                                                <div className="text-[10px] text-zinc-600 mb-1">{h.holeNumber}</div>
-                                                <div className="text-xs font-bold">{h.par}</div>
+                                            <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg flex flex-col justify-between h-20">
+                                                <div className="text-[10px] text-zinc-600 font-bold">{h.holeNumber}</div>
+                                                <div className="text-sm font-black text-white">{h.par}</div>
+                                                <div className="flex justify-between w-full px-1">
+                                                    <span className="text-[9px] text-zinc-500 font-mono tracking-tighter" title="Yardage">{h.yardage || '-'}</span>
+                                                    <span className="text-[9px] text-emerald-500 font-mono font-bold tracking-tighter" title="Handicap">{h.handicapIndex}</span>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

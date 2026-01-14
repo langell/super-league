@@ -29,4 +29,14 @@ This document defines the engineering and design standards for the Super League 
 
 ## 6. API Design
 *   **RESTful Standards:** API responses should follow standard HTTP status codes.
-*   **Semantic HTML:** Ensure all pages follow SEO best practices, including proper heading hierarchy (`h1` to `h3`) and meta descriptions.
+
+## 7. Definition of Done (Agent Reminder)
+Before considering a task complete, ensure:
+1.  **Code is Type Safe:** Zero `any` types.
+2.  **Linting Passes:** No warnings or errors.
+3.  **Unit Tests Added:** Every new logic function in `src/lib` has a corresponding test.
+4.  **E2E Tests Added:** Major UI changes or new flows have a Playwright test.
+5.  **Coverage Verified:** `npm run test:coverage` meets or exceeds 80%.
+6.  **Documentation Updated:** This file or README is updated if new patterns are introduced.
+
+> **⚠️ REMINDER:** Never skip adding tests for a new feature. Enterprise class means verified reliability.

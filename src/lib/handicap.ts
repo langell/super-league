@@ -58,4 +58,4 @@ export function getStrokesForHole(strokesReceived: number, holeStrokeIndex: numb
     const extraStrokes = strokesReceived % 18;
     return fullCycles + (holeStrokeIndex <= extraStrokes ? 1 : 0);
 }
-// husky test
+

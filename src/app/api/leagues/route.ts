@@ -6,7 +6,7 @@ export async function GET() {
     try {
         const leagues = await db.select().from(organizations);
         return NextResponse.json(leagues);
-    } catch (_error) {
+    } catch {
         return NextResponse.json({ error: "Failed to fetch leagues" }, { status: 500 });
     }
 }

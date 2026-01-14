@@ -3,11 +3,10 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { eq, and } from "drizzle-orm";
-import { organizations, leagueMembers, courses, tees, user } from "@/db/schema";
+import { organizations, leagueMembers, courses, tees, user, holes } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-
-// ... existing actions ...
+import { getCourseDetails } from "@/lib/course-api";
 
 export async function addMemberToLeague(formData: FormData) {
     const session = await auth();
@@ -96,8 +95,6 @@ export async function removeMemberFromLeague(formData: FormData) {
 
     if (!callerMembership) throw new Error("Unauthorized");
 
-    // 3. Prevent deleting yourself if you're the only admin (optional safety)
-
     await db.delete(leagueMembers).where(eq(leagueMembers.id, memberId));
 
     revalidatePath(`/dashboard/${leagueSlug}/members`);
@@ -129,6 +126,51 @@ export async function createLeague(formData: FormData) {
 
     revalidatePath("/dashboard");
     redirect("/dashboard");
+}
+
+export async function importCourseFromApi(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const externalCourseId = formData.get("courseId") as string;
+
+    const details = await getCourseDetails(externalCourseId);
+    if (!details) throw new Error("Course details not found");
+
+    const newCourseId = await db.transaction(async (tx) => {
+        const [course] = await tx.insert(courses).values({
+            name: details.name,
+            city: details.city,
+            state: details.state,
+        }).returning();
+
+        for (const teeData of details.tees) {
+            const [tee] = await tx.insert(tees).values({
+                courseId: course.id,
+                name: teeData.name,
+                par: teeData.par,
+                rating: teeData.rating.toString(),
+                slope: teeData.slope,
+            }).returning();
+
+            const holeValues = teeData.holes.map(h => ({
+                teeId: tee.id,
+                holeNumber: h.holeNumber,
+                par: h.par,
+                handicapIndex: h.handicapIndex,
+                yardage: h.yardage || null,
+            }));
+
+            if (holeValues.length > 0) {
+                await tx.insert(holes).values(holeValues);
+            }
+        }
+        return course.id;
+    });
+
+    revalidatePath(`/dashboard/${leagueSlug}/courses`);
+    redirect(`/dashboard/${leagueSlug}/courses/${newCourseId}`);
 }
 
 export async function createCourse(formData: FormData) {

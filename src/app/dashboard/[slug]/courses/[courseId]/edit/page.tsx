@@ -1,6 +1,6 @@
 import { getLeagueAdmin } from "@/lib/auth-utils";
 import { updateCourse } from "@/app/actions";
-import { ArrowLeft, Edit, Sparkles, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
 import { courses, tees } from "@/db/schema";

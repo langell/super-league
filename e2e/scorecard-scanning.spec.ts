@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import path from 'path';
+
 
 test.describe('Scorecard Scanning Feature', () => {
     // Note: These tests require authentication. 
@@ -39,10 +39,10 @@ test.describe('Scorecard Scanning Feature', () => {
         // if we could actually perform the upload.
 
         // For now, we verify the presence of the upload button and its state.
-        const fileInput = page.locator('input[type="file"]');
+        // const fileInput = page.locator('input[type="file"]');
 
         // Create a dummy file for testing
-        const buffer = Buffer.from('fake image content');
+        // const buffer = Buffer.from('fake image content');
 
         // We expect the button to be initially "Select Image"
         await expect(page.getByText('Select Image')).toBeVisible();

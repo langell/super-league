@@ -22,7 +22,7 @@ export async function scanScorecardAction(formData: FormData) {
     if (!apiKey) throw new Error("Google AI API Key not configured");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const buffer = Buffer.from(await imageFile.arrayBuffer());
 

@@ -1,0 +1,10 @@
+echo "🔍 Auditing for vulnerabilities..."
+npm audit || exit 1
+
+echo "✨ Verifying linting..."
+npm run lint || exit 1
+
+echo "🧪 Running tests and checking coverage (threshold: 80%)..."
+npm run test:coverage || exit 1
+
+echo "✅ Validation successful. Proceeding with push."

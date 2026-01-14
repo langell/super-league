@@ -22,7 +22,7 @@ export const organizations = pgTable("organizations", {
 });
 
 // Users
-export const users = pgTable("users", {
+export const user = pgTable("user", {
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name"),
     email: text("email").unique().notNull(),
@@ -37,7 +37,7 @@ export const accounts = pgTable(
     {
         userId: uuid("userId")
             .notNull()
-            .references(() => users.id, { onDelete: "cascade" }),
+            .references(() => user.id, { onDelete: "cascade" }),
         type: text("type").notNull(),
         provider: text("provider").notNull(),
         providerAccountId: text("providerAccountId").notNull(),
@@ -60,7 +60,7 @@ export const sessions = pgTable("session", {
     sessionToken: text("sessionToken").primaryKey(),
     userId: uuid("userId")
         .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
+        .references(() => user.id, { onDelete: "cascade" }),
     expires: timestamp("expires", { mode: "date" }).notNull(),
 });
 
@@ -80,7 +80,7 @@ export const verificationTokens = pgTable(
 export const leagueMembers = pgTable("league_members", {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
-        .references(() => users.id)
+        .references(() => user.id)
         .notNull(),
     organizationId: uuid("organization_id")
         .references(() => organizations.id)
@@ -165,7 +165,7 @@ export const matchPlayers = pgTable("match_players", {
         .references(() => matches.id)
         .notNull(),
     userId: uuid("user_id")
-        .references(() => users.id)
+        .references(() => user.id)
         .notNull(),
     teamId: uuid("team_id"), // Optional grouping for 2v2
     startingHandicap: decimal("starting_handicap", { precision: 4, scale: 1 }),
@@ -182,6 +182,6 @@ export const scores = pgTable("scores", {
         .notNull(),
     grossScore: integer("gross_score"),
     scoreOverride: integer("score_override"), // Admin override
-    updatedBy: uuid("updated_by").references(() => users.id),
+    updatedBy: uuid("updated_by").references(() => user.id),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

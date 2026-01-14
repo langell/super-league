@@ -2,12 +2,6 @@
  * Golf Handicap & Match Play Logic
  */
 
-interface ScoreInfo {
-    grossScore: number;
-    rating: number;
-    slope: number;
-}
-
 /**
  * Calculates the handicap differential for a single round.
  */
@@ -60,21 +54,8 @@ export function calculateMatchStrokes(handicapA: number, handicapB: number): num
  * @returns number of strokes received on this hole (can be > 1 if strokesReceived > 18)
  */
 export function getStrokesForHole(strokesReceived: number, holeStrokeIndex: number): number {
-    let strokes = 0;
-    let remaining = strokesReceived;
-
-    while (remaining > 0) {
-        if (holeStrokeIndex <= remaining % 18 || (remaining % 18 === 0 && remaining > 0)) {
-            // Logic for distribution:
-            // If remaining is 20, you get 1 stroke on all 18, and 1 more on index 1 and 2.
-        }
-        // Simpler:
-        const fullCycles = Math.floor(strokesReceived / 18);
-        const extraStrokes = strokesReceived % 18;
-        return fullCycles + (holeStrokeIndex <= extraStrokes ? 1 : 0);
-    }
-
     const fullCycles = Math.floor(strokesReceived / 18);
     const extraStrokes = strokesReceived % 18;
     return fullCycles + (holeStrokeIndex <= extraStrokes ? 1 : 0);
 }
+// husky test

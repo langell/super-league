@@ -1,6 +1,6 @@
 import { auth, signIn, signOut } from "@/auth";
 import Link from "next/link";
-import { Trophy, Users, Calendar, MapPin, Activity, LayoutDashboard, Database, Shield, LogIn, LogOut } from "lucide-react";
+import { Trophy, Users, Calendar, Activity, LayoutDashboard, Database, Shield, LogIn, LogOut } from "lucide-react";
 
 export default async function Home() {
   const session = await auth();
@@ -48,10 +48,10 @@ export default async function Home() {
 
           <div className="flex flex-wrap gap-4">
             <Link
-              href="/api/leagues"
+              href={session ? "/dashboard" : "/api/auth/signin"}
               className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]"
             >
-              Explore API Reference
+              {session ? "Enter Dashboard" : "Get Started Now"}
             </Link>
             <button className="px-8 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white font-semibold rounded-xl transition-all">
               View Schema Design

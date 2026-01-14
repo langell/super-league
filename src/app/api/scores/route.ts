@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { scores, matchPlayers, organizations, leagueMembers } from "@/db/schema";
+import { scores } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updatePlayerHandicap } from "@/lib/handicap-service";
@@ -12,7 +12,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        // 1. Check if a score already exists for this hole/player
         const existingScore = await db
             .select()
             .from(scores)
@@ -27,8 +26,12 @@ export async function POST(req: Request) {
         let result;
 
         if (existingScore.length > 0) {
-            // 2. Update existing score
-            const updateData: any = {
+            const updateData: {
+                updatedAt: Date;
+                updatedBy: string;
+                scoreOverride?: number;
+                grossScore?: number;
+            } = {
                 updatedAt: new Date(),
                 updatedBy: userId,
             };
@@ -45,18 +48,21 @@ export async function POST(req: Request) {
                 .where(eq(scores.id, existingScore[0].id))
                 .returning();
         } else {
-            // 3. Create new score
-            const insertData: any = {
+            const insertData: {
+                matchPlayerId: string;
+                holeId: string;
+                updatedBy: string;
+                scoreOverride?: number;
+                grossScore: number;
+            } = {
                 matchPlayerId,
                 holeId,
                 updatedBy: userId,
+                grossScore: isAdmin ? grossScore : grossScore,
             };
 
             if (isAdmin) {
                 insertData.scoreOverride = grossScore;
-                insertData.grossScore = grossScore; // Initialize gross as well
-            } else {
-                insertData.grossScore = grossScore;
             }
 
             result = await db.insert(scores).values(insertData).returning();

@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { eq, and } from "drizzle-orm";
-import { organizations, leagueMembers, courses, tees, user, holes } from "@/db/schema";
+import { organizations, leagueMembers, courses, tees, user, holes, teams, teamMembers, seasons, rounds } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCourseDetails } from "@/lib/course-api";
@@ -78,15 +78,18 @@ export async function scanScorecardAction(formData: FormData) {
     }
 }
 
-export async function addMemberToLeague(formData: FormData) {
+export async function addMemberToLeague(prevState: unknown, formData: FormData) {
     const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) return { message: "Unauthorized" };
 
     const organizationId = formData.get("organizationId") as string;
     const leagueSlug = formData.get("leagueSlug") as string;
-    const email = (formData.get("email") as string).toLowerCase();
+    const email = (formData.get("email") as string)?.toLowerCase();
     const name = formData.get("name") as string;
-    const role = formData.get("role") as "admin" | "player";
+    const role = formData.get("role") as "admin" | "player" | "sub";
+
+    if (!email) return { message: "Email is required" };
+    if (!name) return { message: "Name is required" };
 
     // 1. Verify caller is admin
     const [membership] = await db
@@ -101,42 +104,64 @@ export async function addMemberToLeague(formData: FormData) {
         )
         .limit(1);
 
-    if (!membership) throw new Error("Unauthorized");
+    if (!membership) return { message: "Unauthorized - Not an Admin" };
 
-    // 2. Find or create user
-    let [targetUser] = await db.select().from(user).where(eq(user.email, email)).limit(1);
+    try {
+        // 2. Find or create user
+        let [targetUser] = await db.select().from(user).where(eq(user.email, email)).limit(1);
 
-    if (!targetUser) {
-        [targetUser] = await db.insert(user).values({
-            email,
-            name: name || null,
-        }).returning();
-    } else if (name && !targetUser.name) {
-        // Update name if it wasn't set
-        await db.update(user).set({ name }).where(eq(user.id, targetUser.id));
-    }
+        if (!targetUser) {
+            [targetUser] = await db.insert(user).values({
+                email,
+                name: name || null,
+                firstName: name ? name.split(' ')[0] : null,
+                lastName: name ? (name.indexOf(' ') > -1 ? name.split(' ').slice(1).join(' ') : name) : null,
+                phone: formData.get("phone") as string || null,
+                notificationPreference: (formData.get("notificationPreference") as string) || "sms",
+            }).returning();
+        } else if (name && !targetUser.name) {
+            const phone = formData.get("phone") as string;
+            const pref = formData.get("notificationPreference") as string;
 
-    // 3. Add to league if not already member
-    const [existingMember] = await db
-        .select()
-        .from(leagueMembers)
-        .where(
-            and(
-                eq(leagueMembers.organizationId, organizationId),
-                eq(leagueMembers.userId, targetUser.id)
+            // Update name if it wasn't set
+            await db.update(user).set({
+                name,
+                firstName: name.split(' ')[0],
+                lastName: name.indexOf(' ') > -1 ? name.split(' ').slice(1).join(' ') : name,
+                ...(phone ? { phone } : {}),
+                ...(pref ? { notificationPreference: pref } : {})
+            }).where(eq(user.id, targetUser.id));
+        }
+
+        // 3. Add to league if not already member
+        const [existingMember] = await db
+            .select()
+            .from(leagueMembers)
+            .where(
+                and(
+                    eq(leagueMembers.organizationId, organizationId),
+                    eq(leagueMembers.userId, targetUser.id)
+                )
             )
-        )
-        .limit(1);
+            .limit(1);
 
-    if (!existingMember) {
-        await db.insert(leagueMembers).values({
-            userId: targetUser.id,
-            organizationId,
-            role,
-        });
+        if (!existingMember) {
+            await db.insert(leagueMembers).values({
+                userId: targetUser.id,
+                organizationId,
+                role,
+            });
+        } else {
+            return { message: "User is already a member of this league." };
+        }
+
+    } catch (error) {
+        console.error(error);
+        return { message: "Failed to add member" };
     }
 
     revalidatePath(`/dashboard/${leagueSlug}/members`);
+    return { message: "success" };
 }
 
 export async function removeMemberFromLeague(formData: FormData) {
@@ -527,4 +552,353 @@ export async function updateLeagueSettings(formData: FormData) {
     revalidatePath(`/dashboard/${slug}/settings`);
     revalidatePath(`/dashboard/${slug}`);
     redirect(`/dashboard/${slug}`);
+}
+
+export async function createTeam(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const organizationId = formData.get("organizationId") as string;
+    const name = formData.get("name") as string;
+
+    await db.insert(teams).values({
+        organizationId,
+        name,
+    });
+
+    revalidatePath(`/dashboard/${leagueSlug}/teams`);
+}
+
+export async function deleteTeam(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const teamId = formData.get("teamId") as string;
+
+    await db.delete(teams).where(eq(teams.id, teamId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/teams`);
+}
+
+export async function removeMemberFromTeam(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const teamMemberId = formData.get("teamMemberId") as string;
+
+    await db.delete(teamMembers).where(eq(teamMembers.id, teamMemberId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/teams`);
+}
+
+export async function addMemberToTeam(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const teamId = formData.get("teamId") as string;
+    const leagueMemberId = formData.get("leagueMemberId") as string;
+
+    // Check if user is already in a team for this league? 
+    // For now, we allow multiple teams or assume UI filters them out.
+    // Ideally we check if they are already in *this* team.
+
+    // Check limit of 2?
+    const existingMembers = await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
+    if (existingMembers.length >= 2) throw new Error("Team is full");
+
+    await db.insert(teamMembers).values({
+        teamId,
+        leagueMemberId,
+    });
+
+    revalidatePath(`/dashboard/${leagueSlug}/teams`);
+    redirect(`/dashboard/${leagueSlug}/teams`);
+}
+
+export async function updateMember(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const memberId = formData.get("memberId") as string;
+    const userId = formData.get("userId") as string;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
+    const phone = formData.get("phone") as string;
+    const role = formData.get("role") as "admin" | "player" | "sub";
+    const handicap = formData.get("handicap") as string;
+    const notificationPreference = formData.get("notificationPreference") as string;
+
+    // 1. Verify caller is admin (of the league that this member belongs to)
+    const [memberToUpdate] = await db.select().from(leagueMembers).where(eq(leagueMembers.id, memberId)).limit(1);
+    if (!memberToUpdate) throw new Error("Member not found");
+
+    const [callerMembership] = await db
+        .select()
+        .from(leagueMembers)
+        .where(
+            and(
+                eq(leagueMembers.organizationId, memberToUpdate.organizationId),
+                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.role, "admin")
+            )
+        )
+        .limit(1);
+
+    if (!callerMembership) throw new Error("Unauthorized");
+
+    await db.transaction(async (tx) => {
+        // 2. Update League Member Details
+        await tx.update(leagueMembers)
+            .set({
+                role,
+                handicap: handicap,
+            })
+            .where(eq(leagueMembers.id, memberId));
+
+        // 3. Update User Details
+        // Construct full name if changed
+        let fullName = undefined;
+        if (firstName && lastName) {
+            fullName = `${firstName} ${lastName}`;
+        } else if (firstName) {
+            fullName = firstName;
+        }
+
+        await tx.update(user)
+            .set({
+                firstName,
+                lastName,
+                phone,
+                name: fullName,
+                notificationPreference,
+            })
+            .where(eq(user.id, userId));
+    });
+
+    revalidatePath(`/dashboard/${leagueSlug}/members`);
+    redirect(`/dashboard/${leagueSlug}/members`);
+}
+
+export async function createSeason(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const organizationId = formData.get("organizationId") as string;
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const name = formData.get("name") as string;
+
+    // Auto-populate inputs
+    const startDateStr = formData.get("startDate") as string;
+    const endDateStr = formData.get("endDate") as string;
+    const frequencyDay = formData.get("frequencyDay") as string; // 0-6
+    const defaultCourseId = formData.get("defaultCourseId") as string || null;
+
+    if (!name) throw new Error("Name is required");
+
+    // 1. Create Season
+    const [season] = await db.insert(seasons).values({
+        organizationId,
+        name,
+        startDate: startDateStr ? new Date(startDateStr) : null,
+        endDate: endDateStr ? new Date(endDateStr) : null,
+        active: true,
+    }).returning();
+
+    // 2. Generate Rounds if configured
+    if (startDateStr && endDateStr && frequencyDay !== "" && frequencyDay !== null) {
+        // Parse dates as UTC midnight to avoid any local timezone shifts affecting the day of week calculation
+        const start = new Date(startDateStr + 'T12:00:00Z');
+        const end = new Date(endDateStr + 'T12:00:00Z');
+        const targetDay = parseInt(frequencyDay);
+
+        if (isNaN(targetDay)) {
+            console.error("Invalid frequency day");
+            throw new Error("Invalid frequency day");
+        }
+
+        // Loop safety
+        if (start > end) {
+            console.error("Start date is after end date");
+        } else {
+            const currentDate = new Date(start);
+
+            // Find first occurrence of targetDay
+            // getUTCDay() ensures we check the day of the week in UTC
+            let loopGuard = 0;
+            while (currentDate.getUTCDay() !== targetDay && loopGuard < 7) {
+                currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+                loopGuard++;
+            }
+
+            const newRounds = [];
+            let roundGuard = 0;
+
+            // Generate rounds
+            while (currentDate <= end && roundGuard < 104) { // Limit to 2 years (104 weeks)
+                newRounds.push({
+                    seasonId: season.id,
+                    courseId: defaultCourseId || null,
+                    date: new Date(currentDate), // This will save as specific timestamp
+                    status: "scheduled",
+                });
+
+                // Advance 1 week
+                currentDate.setUTCDate(currentDate.getUTCDate() + 7);
+                roundGuard++;
+            }
+
+            if (newRounds.length > 0) {
+                await db.insert(rounds).values(newRounds);
+            }
+        }
+    }
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    redirect(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function createRound(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const seasonId = formData.get("seasonId") as string;
+    const courseId = formData.get("courseId") as string;
+    const dateStr = formData.get("date") as string;
+
+    if (!courseId || !dateStr) throw new Error("Missing fields");
+
+    await db.insert(rounds).values({
+        seasonId,
+        courseId,
+        date: new Date(dateStr),
+        status: "scheduled"
+    });
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    redirect(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function updateSeason(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const seasonId = formData.get("seasonId") as string;
+    const name = formData.get("name") as string;
+    const active = formData.get("active") === "true";
+
+    // Auto-populate inputs
+    const startDateStr = formData.get("startDate") as string;
+    const endDateStr = formData.get("endDate") as string;
+    const frequencyDay = formData.get("frequencyDay") as string; // 0-6
+    const defaultCourseId = formData.get("defaultCourseId") as string || null;
+
+    if (!name) throw new Error("Name is required");
+
+    // 1. Update Season
+    await db.update(seasons).set({
+        name,
+        active,
+    }).where(eq(seasons.id, seasonId));
+
+    // 2. Generate Rounds if configured (and safe to do so)
+    if (startDateStr && endDateStr && frequencyDay !== "" && frequencyDay !== null) {
+        // Double check no rounds exist? Or just append?
+        // Let's check count to be safe to avoid duplicates or mess
+        const existingRounds = await db.select().from(rounds).where(eq(rounds.seasonId, seasonId));
+
+        if (existingRounds.length === 0) {
+            // Apply strict UTC logic
+            const start = new Date(startDateStr + 'T12:00:00Z');
+            const end = new Date(endDateStr + 'T12:00:00Z');
+            const targetDay = parseInt(frequencyDay);
+
+            if (start <= end && !isNaN(targetDay)) {
+                const currentDate = new Date(start);
+
+                let loopGuard = 0;
+                while (currentDate.getUTCDay() !== targetDay && loopGuard < 7) {
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+                    loopGuard++;
+                }
+
+                const newRounds = [];
+                let roundGuard = 0;
+
+                while (currentDate <= end && roundGuard < 104) {
+                    newRounds.push({
+                        seasonId: seasonId,
+                        courseId: defaultCourseId || null,
+                        date: new Date(currentDate),
+                        status: "scheduled",
+                    });
+
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 7);
+                    roundGuard++;
+                }
+
+                if (newRounds.length > 0) {
+                    await db.insert(rounds).values(newRounds);
+                }
+            }
+        }
+    }
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    redirect(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function deleteSeason(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const seasonId = formData.get("seasonId") as string;
+
+    // Cascade delete handles rounds/matches
+    await db.delete(seasons).where(eq(seasons.id, seasonId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    redirect(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function updateRound(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const roundId = formData.get("roundId") as string;
+    const courseId = formData.get("courseId") as string || null;
+    const dateStr = formData.get("date") as string;
+    const status = formData.get("status") as string;
+
+    await db.update(rounds)
+        .set({
+            courseId,
+            date: dateStr ? new Date(dateStr) : undefined,
+            status,
+        })
+        .where(eq(rounds.id, roundId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    redirect(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function deleteRound(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const roundId = formData.get("roundId") as string;
+
+    await db.delete(rounds).where(eq(rounds.id, roundId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    redirect(`/dashboard/${leagueSlug}/schedule`);
 }

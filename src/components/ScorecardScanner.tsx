@@ -34,7 +34,7 @@ interface ScorecardScannerProps {
     initialState?: string;
 }
 
-export function ScorecardScanner({ leagueSlug, courseId, initialName, initialCity, initialState }: ScorecardScannerProps) {
+export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps) {
     const [file, setFile] = useState<File | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [extractedData, setExtractedData] = useState<ExtractedCourse | null>(null);

@@ -50,10 +50,14 @@ export default async function LeagueAdminDashboard({ params }: { params: { slug:
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <div className="lg:col-span-2">
                         <section className="p-12 text-center bg-zinc-900/30 border border-dashed border-zinc-800 rounded-3xl">
-                            <p className="text-zinc-600 mb-4">No rounds scheduled yet.</p>
-                            <button className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-sm font-bold rounded-lg transition-all">
-                                Create First Round
-                            </button>
+                            <div className="flex flex-col items-center justify-center">
+                                <Trophy size={48} className="mb-4 text-zinc-700" />
+                                <h3 className="text-xl font-bold text-zinc-500 mb-2">Schedule & Rounds</h3>
+                                <p className="text-zinc-600 mb-6">Manage your seasons and upcoming matches.</p>
+                                <Link href={`/dashboard/${slug}/schedule`} className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all">
+                                    Manage Schedule
+                                </Link>
+                            </div>
                         </section>
                     </div>
 

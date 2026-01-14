@@ -24,11 +24,18 @@ export const organizations = pgTable("organizations", {
 // Users
 export const user = pgTable("user", {
     id: uuid("id").primaryKey().defaultRandom(),
+    username: text("username").unique(),
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    // Computed name for backward compat if needed, but we'll use first+last
     name: text("name"),
     email: text("email").unique().notNull(),
     emailVerified: timestamp("emailVerified", { mode: "date" }),
     image: text("image"),
+    phone: text("phone"),
     ghinId: text("ghin_id"), // Optional GHIN link
+    venmoHandle: text("venmo_handle"),
+    notificationPreference: varchar("notification_preference", { length: 10 }).default("sms"), // "sms", "email"
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -85,8 +92,30 @@ export const leagueMembers = pgTable("league_members", {
     organizationId: uuid("organization_id")
         .references(() => organizations.id)
         .notNull(),
-    role: varchar("role", { length: 20 }).notNull().default("player"), // "admin", "player"
+    role: varchar("role", { length: 20 }).notNull().default("player"), // "admin", "player", "sub"
     handicap: decimal("handicap", { precision: 4, scale: 1 }).default("0.0"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Teams
+export const teams = pgTable("teams", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+        .references(() => organizations.id)
+        .notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Team Members
+export const teamMembers = pgTable("team_members", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamId: uuid("team_id")
+        .references(() => teams.id, { onDelete: "cascade" })
+        .notNull(),
+    leagueMemberId: uuid("league_member_id")
+        .references(() => leagueMembers.id, { onDelete: "cascade" })
+        .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -138,17 +167,17 @@ export const seasons = pgTable("seasons", {
     startDate: timestamp("start_date"),
     endDate: timestamp("end_date"),
     active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Rounds (A scheduled competition day)
 export const rounds = pgTable("rounds", {
     id: uuid("id").primaryKey().defaultRandom(),
     seasonId: uuid("season_id")
-        .references(() => seasons.id)
+        .references(() => seasons.id, { onDelete: "cascade" })
         .notNull(),
     courseId: uuid("course_id")
-        .references(() => courses.id)
-        .notNull(),
+        .references(() => courses.id),
     date: timestamp("date").notNull(),
     status: varchar("status", { length: 20 }).notNull().default("scheduled"), // "scheduled", "in_progress", "completed"
 });
@@ -157,7 +186,7 @@ export const rounds = pgTable("rounds", {
 export const matches = pgTable("matches", {
     id: uuid("id").primaryKey().defaultRandom(),
     roundId: uuid("round_id")
-        .references(() => rounds.id)
+        .references(() => rounds.id, { onDelete: "cascade" })
         .notNull(),
     format: varchar("format", { length: 20 }).notNull().default("match_play"),
 });
@@ -166,7 +195,7 @@ export const matches = pgTable("matches", {
 export const matchPlayers = pgTable("match_players", {
     id: uuid("id").primaryKey().defaultRandom(),
     matchId: uuid("match_id")
-        .references(() => matches.id)
+        .references(() => matches.id, { onDelete: "cascade" })
         .notNull(),
     userId: uuid("user_id")
         .references(() => user.id)
@@ -179,7 +208,7 @@ export const matchPlayers = pgTable("match_players", {
 export const scores = pgTable("scores", {
     id: uuid("id").primaryKey().defaultRandom(),
     matchPlayerId: uuid("match_player_id")
-        .references(() => matchPlayers.id)
+        .references(() => matchPlayers.id, { onDelete: "cascade" })
         .notNull(),
     holeId: uuid("hole_id")
         .references(() => holes.id)

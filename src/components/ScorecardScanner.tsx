@@ -131,10 +131,26 @@ export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
                                 <input
                                     type="text"
                                     value={extractedData.name}
+                                    placeholder="Enter Course Name"
                                     onChange={(e) => setExtractedData({ ...extractedData, name: e.target.value })}
-                                    className="text-3xl font-black bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-emerald-500 outline-none transition-colors w-full"
+                                    className="text-3xl font-black bg-transparent border-b border-zinc-800 hover:border-zinc-700 focus:border-emerald-500 outline-none transition-colors w-full pb-2 mb-2 placeholder:text-zinc-700"
                                 />
-                                <p className="text-zinc-500">{extractedData.city}, {extractedData.state}</p>
+                                <div className="flex gap-4">
+                                    <input
+                                        type="text"
+                                        value={extractedData.city}
+                                        placeholder="City"
+                                        onChange={(e) => setExtractedData({ ...extractedData, city: e.target.value })}
+                                        className="bg-transparent text-sm text-zinc-500 border-b border-transparent hover:border-zinc-800 focus:border-emerald-500 outline-none transition-colors w-32"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={extractedData.state}
+                                        placeholder="State"
+                                        onChange={(e) => setExtractedData({ ...extractedData, state: e.target.value })}
+                                        className="bg-transparent text-sm text-zinc-500 border-b border-transparent hover:border-zinc-800 focus:border-emerald-500 outline-none transition-colors w-16"
+                                    />
+                                </div>
                             </div>
                             <button onClick={() => setExtractedData(null)} className="text-sm text-zinc-500 hover:text-white underline underline-offset-4">Retake Photo</button>
                         </div>

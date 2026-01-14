@@ -3,6 +3,7 @@ import { createCourse } from "@/app/actions";
 import { ArrowLeft, Sparkles, Plus } from "lucide-react";
 import Link from "next/link";
 import { CourseSearch } from "@/components/CourseSearch";
+import { ScorecardScanner } from "@/components/ScorecardScanner";
 
 export default async function NewCoursePage({ params }: { params: { slug: string } }) {
     const { slug } = await params;
@@ -28,7 +29,24 @@ export default async function NewCoursePage({ params }: { params: { slug: string
                 <div className="space-y-12">
                     {/* Discovery Section */}
                     <section>
-                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 px-2">Import from Database</h3>
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 px-2 flex items-center gap-2">
+                            <Sparkles size={14} className="text-emerald-500" />
+                            AI Scorecard Scan
+                        </h3>
+                        <ScorecardScanner leagueSlug={slug} />
+                    </section>
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-zinc-900 border-dashed"></span>
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest text-zinc-800">
+                            <span className="bg-[#0a0a0a] px-4">Or use traditional search</span>
+                        </div>
+                    </div>
+
+                    <section>
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 px-2">Global Database Search</h3>
                         <CourseSearch leagueSlug={slug} />
                     </section>
 

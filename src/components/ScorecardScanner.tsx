@@ -1,0 +1,194 @@
+"use client";
+
+import { useState } from "react";
+import { Camera, Loader2, AlertCircle, Sparkles, Save } from "lucide-react";
+import { scanScorecardAction, saveExtractedCourseAction } from "@/app/actions";
+
+interface ExtractedHole {
+    holeNumber: number;
+    par: number;
+    handicapIndex: number;
+    yardage?: number;
+}
+
+interface ExtractedTee {
+    name: string;
+    par: number;
+    rating: string;
+    slope: number;
+    holes: ExtractedHole[];
+}
+
+interface ExtractedCourse {
+    name: string;
+    city: string;
+    state: string;
+    tees: ExtractedTee[];
+}
+
+export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
+    const [file, setFile] = useState<File | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
+    const [extractedData, setExtractedData] = useState<ExtractedCourse | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files?.[0]) {
+            setFile(e.target.files[0]);
+            setError(null);
+        }
+    };
+
+    const handleScan = async () => {
+        if (!file) return;
+
+        setIsScanning(true);
+        setError(null);
+        const formData = new FormData();
+        formData.append("scorecard", file);
+
+        try {
+            const data = await scanScorecardAction(formData);
+            setExtractedData(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to scan scorecard");
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!extractedData) return;
+
+        setIsSaving(true);
+        try {
+            await saveExtractedCourseAction(extractedData, leagueSlug);
+            // Optionally, you might want to redirect or show a success message here
+            // router.push(`/leagues/${leagueSlug}/courses`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to save course");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8">
+            {!extractedData ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-zinc-900/40 border-2 border-dashed border-zinc-800 rounded-3xl text-center group hover:border-emerald-500/50 transition-all">
+                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500 mb-6 group-hover:scale-110 transition-transform">
+                        <Camera size={32} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Scan Physical Scorecard</h3>
+                    <p className="text-zinc-500 max-w-xs mb-8">Take a photo of your scorecard. Our AI will extract all course, tee, and hole data instantly.</p>
+
+                    <label className="relative cursor-pointer">
+                        <span className="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-bold transition-all inline-block">
+                            {file ? file.name : "Select Image"}
+                        </span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                    </label>
+
+                    {file && (
+                        <button
+                            onClick={handleScan}
+                            disabled={isScanning}
+                            className="mt-6 px-12 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl shadow-xl shadow-emerald-500/20 flex items-center gap-3 transition-all disabled:opacity-50"
+                        >
+                            {isScanning ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={20} />
+                                    Analyzing Scorecard...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles size={20} />
+                                    Run AI Extraction
+                                </>
+                            )}
+                        </button>
+                    )}
+
+                    {error && (
+                        <div className="mt-6 flex items-center gap-2 text-red-400 bg-red-400/10 px-4 py-2 rounded-lg text-sm">
+                            <AlertCircle size={16} />
+                            {error}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-3xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10">
+                            <Sparkles size={120} className="text-emerald-500" />
+                        </div>
+
+                        <div className="flex justify-between items-start mb-8">
+                            <div>
+                                <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-2">Extraction Results</div>
+                                <h2 className="text-3xl font-black">{extractedData.name}</h2>
+                                <p className="text-zinc-500">{extractedData.city}, {extractedData.state}</p>
+                            </div>
+                            <button onClick={() => setExtractedData(null)} className="text-sm text-zinc-500 hover:text-white underline underline-offset-4">Retake Photo</button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {extractedData.tees.map((tee, idx) => (
+                                <div key={idx} className="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                            <span className="font-bold text-lg">{tee.name} Tee</span>
+                                        </div>
+                                        <div className="flex gap-6 text-xs">
+                                            <div>
+                                                <span className="text-zinc-500 uppercase mr-2">Rating</span>
+                                                <span className="font-mono font-bold">{tee.rating}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-zinc-500 uppercase mr-2">Slope</span>
+                                                <span className="font-mono font-bold">{tee.slope}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-zinc-500 uppercase mr-2">Par</span>
+                                                <span className="font-mono font-bold">{tee.par}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-9 gap-1">
+                                        {tee.holes.slice(0, 9).map(h => (
+                                            <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg">
+                                                <div className="text-[10px] text-zinc-600 mb-1">{h.holeNumber}</div>
+                                                <div className="text-xs font-bold">{h.par}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-9 gap-1 mt-1">
+                                        {tee.holes.slice(9, 18).map(h => (
+                                            <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg">
+                                                <div className="text-[10px] text-zinc-600 mb-1">{h.holeNumber}</div>
+                                                <div className="text-xs font-bold">{h.par}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="w-full mt-8 py-5 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-sm rounded-2xl shadow-2xl shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+                        >
+                            {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                            {isSaving ? "Saving Database..." : "Confirm & Save Course"}
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

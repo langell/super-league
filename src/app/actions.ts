@@ -7,6 +7,76 @@ import { organizations, leagueMembers, courses, tees, user, holes } from "@/db/s
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCourseDetails } from "@/lib/course-api";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// ... existing actions ...
+
+export async function scanScorecardAction(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const imageFile = formData.get("scorecard") as File;
+    if (!imageFile) throw new Error("No image provided");
+
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) throw new Error("Google AI API Key not configured");
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const buffer = Buffer.from(await imageFile.arrayBuffer());
+
+    const prompt = `
+        You are a golf course database expert. Extract the following information from this golf scorecard image:
+        1. Course Name, City, and State.
+        2. List of Tee sets (e.g. Blue, White, Red).
+        3. For EACH tee set, extract: 
+           - Slope and Rating (if available)
+           - Par for all 18 holes
+           - Handicap Stroke Index for all 18 holes
+           - Yardage for all 18 holes (if available)
+
+        Return ONLY a clean JSON object with this structure:
+        {
+          "name": "Course Name",
+          "city": "City",
+          "state": "State",
+          "tees": [
+            {
+              "name": "Tee Name",
+              "par": 72,
+              "rating": "72.4",
+              "slope": 131,
+              "holes": [
+                { "holeNumber": 1, "par": 4, "handicapIndex": 5, "yardage": 410 },
+                ... up to 18
+              ]
+            }
+          ]
+        }
+    `;
+
+    const result = await model.generateContent([
+        prompt,
+        {
+            inlineData: {
+                data: buffer.toString("base64"),
+                mimeType: imageFile.type
+            }
+        }
+    ]);
+
+    const responseText = result.response.text();
+    // Clean up potential markdown formatting in JSON response
+    const jsonString = responseText.replace(/```json\n?|\n?```/g, "").trim();
+
+    try {
+        return JSON.parse(jsonString);
+    } catch {
+        console.error("Failed to parse Gemini response:", responseText);
+        throw new Error("Failed to extract data from scorecard image.");
+    }
+}
 
 export async function addMemberToLeague(formData: FormData) {
     const session = await auth();
@@ -126,6 +196,67 @@ export async function createLeague(formData: FormData) {
 
     revalidatePath("/dashboard");
     redirect("/dashboard");
+}
+
+interface ScannedHole {
+    holeNumber: number;
+    par: number;
+    handicapIndex: number;
+    yardage?: number;
+}
+
+interface ScannedTee {
+    name: string;
+    par: number;
+    rating: string;
+    slope: number;
+    holes: ScannedHole[];
+}
+
+interface ScannedCourse {
+    name: string;
+    city: string;
+    state: string;
+    tees: ScannedTee[];
+}
+
+export async function saveExtractedCourseAction(courseData: ScannedCourse, leagueSlug: string) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const newCourseId = await db.transaction(async (tx) => {
+        const [course] = await tx.insert(courses).values({
+            name: courseData.name,
+            city: courseData.city,
+            state: courseData.state,
+        }).returning();
+
+        for (const teeData of courseData.tees) {
+            const [tee] = await tx.insert(tees).values({
+                courseId: course.id,
+                name: teeData.name,
+                par: teeData.par,
+                rating: teeData.rating.toString(),
+                slope: teeData.slope,
+            }).returning();
+
+            const holeValues = teeData.holes.map((h: ScannedHole) => ({
+                teeId: tee.id,
+                holeNumber: h.holeNumber,
+                par: h.par,
+                handicapIndex: h.handicapIndex,
+                yardage: h.yardage || null,
+            }));
+
+            if (holeValues.length > 0) {
+                await tx.insert(holes).values(holeValues);
+            }
+        }
+        return course.id;
+    });
+
+    revalidatePath(`/dashboard/${leagueSlug}/courses`);
+    redirect(`/dashboard/${leagueSlug}/courses/${newCourseId}`);
 }
 
 export async function importCourseFromApi(formData: FormData) {

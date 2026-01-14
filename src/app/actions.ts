@@ -224,7 +224,7 @@ export async function saveExtractedCourseAction(courseData: ScannedCourse, leagu
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const newCourseId = await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
         const [course] = await tx.insert(courses).values({
             name: courseData.name,
             city: courseData.city,
@@ -256,7 +256,7 @@ export async function saveExtractedCourseAction(courseData: ScannedCourse, leagu
     });
 
     revalidatePath(`/dashboard/${leagueSlug}/courses`);
-    redirect(`/dashboard/${leagueSlug}/courses/${newCourseId}`);
+    redirect(`/dashboard/${leagueSlug}/courses`);
 }
 
 export async function importCourseFromApi(formData: FormData) {

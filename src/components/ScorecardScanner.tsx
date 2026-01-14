@@ -128,7 +128,12 @@ export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
                         <div className="flex justify-between items-start mb-8">
                             <div>
                                 <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-2">Extraction Results</div>
-                                <h2 className="text-3xl font-black">{extractedData.name}</h2>
+                                <input
+                                    type="text"
+                                    value={extractedData.name}
+                                    onChange={(e) => setExtractedData({ ...extractedData, name: e.target.value })}
+                                    className="text-3xl font-black bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-emerald-500 outline-none transition-colors w-full"
+                                />
                                 <p className="text-zinc-500">{extractedData.city}, {extractedData.state}</p>
                             </div>
                             <button onClick={() => setExtractedData(null)} className="text-sm text-zinc-500 hover:text-white underline underline-offset-4">Retake Photo</button>

@@ -224,39 +224,108 @@ export async function saveExtractedCourseAction(courseData: ScannedCourse, leagu
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    await db.transaction(async (tx) => {
-        const [course] = await tx.insert(courses).values({
-            name: courseData.name,
-            city: courseData.city,
-            state: courseData.state,
-        }).returning();
-
-        for (const teeData of courseData.tees) {
-            const [tee] = await tx.insert(tees).values({
-                courseId: course.id,
-                name: teeData.name,
-                par: teeData.par,
-                rating: teeData.rating.toString(),
-                slope: teeData.slope,
+    try {
+        await db.transaction(async (tx) => {
+            const [course] = await tx.insert(courses).values({
+                name: courseData.name,
+                city: courseData.city,
+                state: courseData.state,
             }).returning();
 
-            const holeValues = teeData.holes.map((h: ScannedHole) => ({
-                teeId: tee.id,
-                holeNumber: h.holeNumber,
-                par: h.par,
-                handicapIndex: h.handicapIndex,
-                yardage: h.yardage || null,
-            }));
+            for (const teeData of courseData.tees) {
+                const [tee] = await tx.insert(tees).values({
+                    courseId: course.id,
+                    name: teeData.name,
+                    par: teeData.par || 72,
+                    rating: (teeData.rating || "72.0").toString(),
+                    slope: teeData.slope || 113,
+                }).returning();
 
-            if (holeValues.length > 0) {
-                await tx.insert(holes).values(holeValues);
+                if (teeData.holes && Array.isArray(teeData.holes)) {
+                    const holeValues = teeData.holes.map((h: ScannedHole) => ({
+                        teeId: tee.id,
+                        holeNumber: h.holeNumber,
+                        par: h.par || 4,
+                        handicapIndex: h.handicapIndex || 18,
+                        yardage: h.yardage || null,
+                    }));
+
+                    if (holeValues.length > 0) {
+                        await tx.insert(holes).values(holeValues);
+                    }
+                }
             }
-        }
-        return course.id;
-    });
+            return course.id;
+        });
+    } catch (error) {
+        console.error("Failed to save extracted course:", error);
+        throw new Error("Failed to save course data");
+    }
 
     revalidatePath(`/dashboard/${leagueSlug}/courses`);
     redirect(`/dashboard/${leagueSlug}/courses`);
+}
+
+
+export async function updateCourseFromScanAction(courseId: string, courseData: ScannedCourse, leagueSlug: string) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    try {
+        await db.transaction(async (tx) => {
+            // 1. Update Course Info
+            await tx.update(courses)
+                .set({
+                    name: courseData.name,
+                    city: courseData.city,
+                    state: courseData.state,
+                })
+                .where(eq(courses.id, courseId));
+
+            // 2. Find existing tees to delete their holes
+            const existingTees = await tx.select({ id: tees.id }).from(tees).where(eq(tees.courseId, courseId));
+
+            if (existingTees.length > 0) {
+                const teeIds = existingTees.map(t => t.id);
+                for (const tId of teeIds) {
+                    await tx.delete(holes).where(eq(holes.teeId, tId));
+                }
+                await tx.delete(tees).where(eq(tees.courseId, courseId));
+            }
+
+            // 3. Re-insert Tees and Holes
+            for (const teeData of courseData.tees) {
+                const [tee] = await tx.insert(tees).values({
+                    courseId: courseId,
+                    name: teeData.name,
+                    par: teeData.par || 72,
+                    rating: (teeData.rating || "72.0").toString(),
+                    slope: teeData.slope || 113,
+                }).returning();
+
+                if (teeData.holes && Array.isArray(teeData.holes)) {
+                    const holeValues = teeData.holes.map((h: ScannedHole) => ({
+                        teeId: tee.id,
+                        holeNumber: h.holeNumber,
+                        par: h.par || 4,
+                        handicapIndex: h.handicapIndex || 18,
+                        yardage: h.yardage || null,
+                    }));
+
+                    if (holeValues.length > 0) {
+                        await tx.insert(holes).values(holeValues);
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Failed to update course:", error);
+        throw new Error("Failed to update course data");
+    }
+
+    revalidatePath(`/dashboard/${leagueSlug}/courses`);
+    revalidatePath(`/dashboard/${leagueSlug}/courses/${courseId}/edit`);
+    redirect(`/dashboard/${leagueSlug}/courses/${courseId}/edit`);
 }
 
 export async function importCourseFromApi(formData: FormData) {
@@ -310,17 +379,91 @@ export async function createCourse(formData: FormData) {
 
     const leagueSlug = formData.get("leagueSlug") as string;
     const name = formData.get("name") as string;
+    const address = formData.get("address") as string;
     const city = formData.get("city") as string;
     const state = formData.get("state") as string;
+    const zipCode = formData.get("zipCode") as string;
+    const proName = formData.get("proName") as string;
+    const phoneNumber = formData.get("phoneNumber") as string;
+    const email = formData.get("email") as string;
+    const website = formData.get("website") as string;
 
     const [course] = await db.insert(courses).values({
         name,
+        address,
         city,
         state,
+        zipCode,
+        proName,
+        phoneNumber,
+        email,
+        website,
     }).returning();
 
     revalidatePath(`/dashboard/${leagueSlug}/courses`);
     redirect(`/dashboard/${leagueSlug}/courses/${course.id}`);
+}
+
+export async function updateCourse(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const courseId = formData.get("courseId") as string;
+    const name = formData.get("name") as string;
+    const address = formData.get("address") as string;
+    const city = formData.get("city") as string;
+    const state = formData.get("state") as string;
+    const zipCode = formData.get("zipCode") as string;
+    const proName = formData.get("proName") as string;
+    const phoneNumber = formData.get("phoneNumber") as string;
+    const email = formData.get("email") as string;
+    const website = formData.get("website") as string;
+
+    await db.update(courses)
+        .set({
+            name,
+            address,
+            city,
+            state,
+            zipCode,
+            proName,
+            phoneNumber,
+            email,
+            website,
+        })
+        .where(eq(courses.id, courseId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/courses/${courseId}/edit`);
+    redirect(`/dashboard/${leagueSlug}/courses/${courseId}/edit`);
+}
+
+export async function deleteCourse(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const courseId = formData.get("courseId") as string;
+
+    await db.transaction(async (tx) => {
+        // 1. Delete Holes
+        const existingTees = await tx.select({ id: tees.id }).from(tees).where(eq(tees.courseId, courseId));
+        if (existingTees.length > 0) {
+            const teeIds = existingTees.map(t => t.id);
+            for (const tId of teeIds) {
+                await tx.delete(holes).where(eq(holes.teeId, tId));
+            }
+        }
+
+        // 2. Delete Tees
+        await tx.delete(tees).where(eq(tees.courseId, courseId));
+
+        // 3. Delete Course
+        await tx.delete(courses).where(eq(courses.id, courseId));
+    });
+
+    revalidatePath(`/dashboard/${leagueSlug}/courses`);
+    redirect(`/dashboard/${leagueSlug}/courses`);
 }
 
 export async function createTee(formData: FormData) {

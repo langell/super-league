@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Camera, Loader2, AlertCircle, Sparkles, Save } from "lucide-react";
-import { scanScorecardAction, saveExtractedCourseAction } from "@/app/actions";
+import { scanScorecardAction, saveExtractedCourseAction, updateCourseFromScanAction } from "@/app/actions";
 
 interface ExtractedHole {
     holeNumber: number;
@@ -26,7 +26,15 @@ interface ExtractedCourse {
     tees: ExtractedTee[];
 }
 
-export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
+interface ScorecardScannerProps {
+    leagueSlug: string;
+    courseId?: string;
+    initialName?: string;
+    initialCity?: string;
+    initialState?: string;
+}
+
+export function ScorecardScanner({ leagueSlug, courseId, initialName, initialCity, initialState }: ScorecardScannerProps) {
     const [file, setFile] = useState<File | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [extractedData, setExtractedData] = useState<ExtractedCourse | null>(null);
@@ -64,9 +72,11 @@ export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
 
         setIsSaving(true);
         try {
-            await saveExtractedCourseAction(extractedData, leagueSlug);
-            // Optionally, you might want to redirect or show a success message here
-            // router.push(`/leagues/${leagueSlug}/courses`);
+            if (courseId) {
+                await updateCourseFromScanAction(courseId, extractedData, leagueSlug);
+            } else {
+                await saveExtractedCourseAction(extractedData, leagueSlug);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save course");
         } finally {
@@ -81,8 +91,13 @@ export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
                     <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500 mb-6 group-hover:scale-110 transition-transform">
                         <Camera size={32} />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">Scan Physical Scorecard</h3>
-                    <p className="text-zinc-500 max-w-xs mb-8">Take a photo of your scorecard. Our AI will extract all course, tee, and hole data instantly.</p>
+                    <h3 className="text-xl font-bold mb-2">{courseId ? "Update via Scorecard Scan" : "Scan Physical Scorecard"}</h3>
+                    <p className="text-zinc-500 max-w-xs mb-8">
+                        {courseId
+                            ? "Scan a new scorecard to completely replace the existing tee and hole data for this course."
+                            : "Take a photo of your scorecard. Our AI will extract all course, tee, and hole data instantly."
+                        }
+                    </p>
 
                     <label className="relative cursor-pointer">
                         <span className="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-bold transition-all inline-block">
@@ -130,7 +145,7 @@ export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
                                 <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-2">Extraction Results</div>
                                 <input
                                     type="text"
-                                    value={extractedData.name}
+                                    value={extractedData.name || ""}
                                     placeholder="Enter Course Name"
                                     onChange={(e) => setExtractedData({ ...extractedData, name: e.target.value })}
                                     className="text-3xl font-black bg-transparent border-b border-zinc-800 hover:border-zinc-700 focus:border-emerald-500 outline-none transition-colors w-full pb-2 mb-2 placeholder:text-zinc-700"
@@ -138,14 +153,14 @@ export function ScorecardScanner({ leagueSlug }: { leagueSlug: string }) {
                                 <div className="flex gap-4">
                                     <input
                                         type="text"
-                                        value={extractedData.city}
+                                        value={extractedData.city || ""}
                                         placeholder="City"
                                         onChange={(e) => setExtractedData({ ...extractedData, city: e.target.value })}
                                         className="bg-transparent text-sm text-zinc-500 border-b border-transparent hover:border-zinc-800 focus:border-emerald-500 outline-none transition-colors w-32"
                                     />
                                     <input
                                         type="text"
-                                        value={extractedData.state}
+                                        value={extractedData.state || ""}
                                         placeholder="State"
                                         onChange={(e) => setExtractedData({ ...extractedData, state: e.target.value })}
                                         className="bg-transparent text-sm text-zinc-500 border-b border-transparent hover:border-zinc-800 focus:border-emerald-500 outline-none transition-colors w-16"

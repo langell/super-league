@@ -6,5 +6,5 @@ import { authConfig } from "./auth.config";
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
     adapter: DrizzleAdapter(db),
-    session: { strategy: "database" }, // Explicitly state database strategy if using adapter
+    session: { strategy: "jwt" }, // Use JWT for Edge compatibility
 });

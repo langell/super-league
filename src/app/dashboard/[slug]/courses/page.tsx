@@ -2,7 +2,7 @@ import { getLeagueAdmin } from "@/lib/auth-utils";
 import { db } from "@/db";
 import { courses } from "@/db/schema";
 import Link from "next/link";
-import { MapPin, ArrowLeft } from "lucide-react";
+import { MapPin, ArrowLeft, Edit } from "lucide-react";
 
 export default async function LeagueCoursesPage({ params }: { params: { slug: string } }) {
     const { slug } = await params;
@@ -30,6 +30,9 @@ export default async function LeagueCoursesPage({ params }: { params: { slug: st
                                     <p className="text-zinc-500">{course.city}, {course.state}</p>
                                 </div>
                             </div>
+                            <Link href={`/dashboard/${slug}/courses/${course.id}/edit`} className="p-2 text-zinc-500 hover:text-white transition-colors">
+                                <Edit size={16} />
+                            </Link>
                         </div>
                     ))}
                 </div>

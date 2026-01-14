@@ -97,7 +97,11 @@ export const courses = pgTable("courses", {
     address: text("address"),
     city: text("city"),
     state: text("state"),
+    zipCode: text("zip_code"),
     website: text("website"),
+    proName: text("pro_name"),
+    phoneNumber: text("phone_number"),
+    email: text("email"),
 });
 
 // Tees

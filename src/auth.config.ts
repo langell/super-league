@@ -14,16 +14,27 @@ export const authConfig = {
         }),
     ],
     callbacks: {
-        session({ session, user }) {
-            if (session.user) {
-                session.user.id = user.id;
+        jwt({ token, user }) {
+            if (user) {
+                token.id = user.id;
+            }
+            return token;
+        },
+        session({ session, token }) {
+            if (session.user && token.id) {
+                session.user.id = token.id as string;
             }
             return session;
         },
-        authorized({ auth }) {
-            // Simple check: if user is logged in, they are authorized.
-            // You can add more complex path-based logic here if needed.
-            return !!auth?.user;
+        authorized({ auth, request: { nextUrl } }) {
+            const isLoggedIn = !!auth?.user;
+            const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+
+            if (isOnDashboard) {
+                if (isLoggedIn) return true;
+                return false; // Redirect unauthenticated users to login page
+            }
+            return true;
         },
     },
 } satisfies NextAuthConfig;

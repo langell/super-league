@@ -3,9 +3,100 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { eq, and } from "drizzle-orm";
-import { organizations, leagueMembers, courses, tees } from "@/db/schema";
+import { organizations, leagueMembers, courses, tees, user } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+
+// ... existing actions ...
+
+export async function addMemberToLeague(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const organizationId = formData.get("organizationId") as string;
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const email = (formData.get("email") as string).toLowerCase();
+    const role = formData.get("role") as "admin" | "player";
+
+    // 1. Verify caller is admin
+    const [membership] = await db
+        .select()
+        .from(leagueMembers)
+        .where(
+            and(
+                eq(leagueMembers.organizationId, organizationId),
+                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.role, "admin")
+            )
+        )
+        .limit(1);
+
+    if (!membership) throw new Error("Unauthorized");
+
+    // 2. Find or create user
+    let [targetUser] = await db.select().from(user).where(eq(user.email, email)).limit(1);
+
+    if (!targetUser) {
+        [targetUser] = await db.insert(user).values({
+            email,
+        }).returning();
+    }
+
+    // 3. Add to league if not already member
+    const [existingMember] = await db
+        .select()
+        .from(leagueMembers)
+        .where(
+            and(
+                eq(leagueMembers.organizationId, organizationId),
+                eq(leagueMembers.userId, targetUser.id)
+            )
+        )
+        .limit(1);
+
+    if (!existingMember) {
+        await db.insert(leagueMembers).values({
+            userId: targetUser.id,
+            organizationId,
+            role,
+        });
+    }
+
+    revalidatePath(`/dashboard/${leagueSlug}/members`);
+}
+
+export async function removeMemberFromLeague(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const memberId = formData.get("memberId") as string;
+    const leagueSlug = formData.get("leagueSlug") as string;
+
+    // 1. Get member info to find organizationId
+    const [memberToDelete] = await db.select().from(leagueMembers).where(eq(leagueMembers.id, memberId)).limit(1);
+    if (!memberToDelete) return;
+
+    // 2. Verify caller is admin of that league
+    const [callerMembership] = await db
+        .select()
+        .from(leagueMembers)
+        .where(
+            and(
+                eq(leagueMembers.organizationId, memberToDelete.organizationId),
+                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.role, "admin")
+            )
+        )
+        .limit(1);
+
+    if (!callerMembership) throw new Error("Unauthorized");
+
+    // 3. Prevent deleting yourself if you're the only admin (optional safety)
+
+    await db.delete(leagueMembers).where(eq(leagueMembers.id, memberId));
+
+    revalidatePath(`/dashboard/${leagueSlug}/members`);
+}
 
 export async function createLeague(formData: FormData) {
     const session = await auth();

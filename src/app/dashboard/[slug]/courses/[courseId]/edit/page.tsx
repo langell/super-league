@@ -8,7 +8,7 @@ import { ScorecardScanner } from "@/components/ScorecardScanner";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
-export default async function EditCoursePage({ params }: { params: { slug: string; courseId: string } }) {
+export default async function EditCoursePage({ params }: { params: Promise<{ slug: string; courseId: string }> }) {
     const { slug, courseId } = await params;
     await getLeagueAdmin(slug);
 

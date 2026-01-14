@@ -5,7 +5,7 @@ import { eq, count } from "drizzle-orm";
 import Link from "next/link";
 import { Trophy, MapPin, Users, ArrowRight, UserPlus } from "lucide-react";
 
-export default async function LeagueAdminDashboard({ params }: { params: { slug: string } }) {
+export default async function LeagueAdminDashboard({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const league = await getLeagueAdmin(slug);
 

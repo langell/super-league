@@ -7,7 +7,7 @@ import { ArrowLeft, Save, Wand2, Trash2 } from "lucide-react";
 import { updateSeason, deleteSeason } from "@/app/actions";
 import { notFound } from "next/navigation";
 
-export default async function EditSeasonPage({ params }: { params: { slug: string; seasonId: string } }) {
+export default async function EditSeasonPage({ params }: { params: Promise<{ slug: string; seasonId: string }> }) {
     const { slug, seasonId } = await params;
     const league = await getLeagueAdmin(slug);
 

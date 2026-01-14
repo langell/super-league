@@ -8,7 +8,7 @@ import Image from "next/image";
 import { createMatch, deleteMatch } from "@/app/actions";
 import { notFound } from "next/navigation";
 
-export default async function RoundDetailPage({ params }: { params: { slug: string; seasonId: string; roundId: string } }) {
+export default async function RoundDetailPage({ params }: { params: Promise<{ slug: string; seasonId: string; roundId: string }> }) {
     const { slug, seasonId, roundId } = await params;
     const league = await getLeagueAdmin(slug);
 

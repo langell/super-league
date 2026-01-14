@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CourseSearch } from "@/components/CourseSearch";
 import { ScorecardScanner } from "@/components/ScorecardScanner";
 
-export default async function NewCoursePage({ params }: { params: { slug: string } }) {
+export default async function NewCoursePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     await getLeagueAdmin(slug);
 

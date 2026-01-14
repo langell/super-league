@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Calendar, Plus, MapPin, ChevronRight, Trophy, Edit } from "lucide-react";
 import { generateSchedule } from "@/app/actions";
 
-export default async function SchedulePage({ params }: { params: { slug: string } }) {
+export default async function SchedulePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const league = await getLeagueAdmin(slug);
 

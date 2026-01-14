@@ -8,7 +8,7 @@ import Image from "next/image";
 import { addMemberToTeam } from "@/app/actions";
 import { redirect } from "next/navigation";
 
-export default async function AddTeamMemberPage({ params }: { params: { slug: string; teamId: string } }) {
+export default async function AddTeamMemberPage({ params }: { params: Promise<{ slug: string; teamId: string }> }) {
     const { slug, teamId } = await params;
     const league = await getLeagueAdmin(slug);
 

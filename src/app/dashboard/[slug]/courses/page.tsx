@@ -4,7 +4,7 @@ import { courses } from "@/db/schema";
 import Link from "next/link";
 import { MapPin, Edit } from "lucide-react";
 
-export default async function LeagueCoursesPage({ params }: { params: { slug: string } }) {
+export default async function LeagueCoursesPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     await getLeagueAdmin(slug);
     const allCourses = await db.select().from(courses);

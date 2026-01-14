@@ -3,7 +3,7 @@ import { updateLeagueSettings } from "@/app/actions";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 
-export default async function LeagueSettingsPage({ params }: { params: { slug: string } }) {
+export default async function LeagueSettingsPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const league = await getLeagueAdmin(slug);
 

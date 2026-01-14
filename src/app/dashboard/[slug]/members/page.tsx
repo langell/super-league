@@ -7,7 +7,7 @@ import { UserPlus, Shield, User as UserIcon, Trash2, Edit } from "lucide-react";
 import { removeMemberFromLeague } from "@/app/actions";
 import Image from "next/image";
 import { InviteMemberForm } from "@/components/InviteMemberForm";
-export default async function LeagueMembersPage({ params }: { params: { slug: string } }) {
+export default async function LeagueMembersPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const league = await getLeagueAdmin(slug);
 

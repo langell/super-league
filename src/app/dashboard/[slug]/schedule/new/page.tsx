@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Save, Wand2 } from "lucide-react";
 import { createSeason } from "@/app/actions";
 
-export default async function NewSeasonPage({ params }: { params: { slug: string } }) {
+export default async function NewSeasonPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const league = await getLeagueAdmin(slug);
     const allCourses = await db.select().from(courses);

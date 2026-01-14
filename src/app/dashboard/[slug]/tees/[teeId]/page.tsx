@@ -7,7 +7,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-export default async function TeeHolesPage({ params }: { params: { slug: string, teeId: string } }) {
+export default async function TeeHolesPage({ params }: { params: Promise<{ slug: string, teeId: string }> }) {
     const { slug, teeId } = await params;
     await getLeagueAdmin(slug);
 

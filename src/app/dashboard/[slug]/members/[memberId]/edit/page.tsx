@@ -7,7 +7,7 @@ import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import { updateMember, removeMemberFromLeague } from "@/app/actions";
 import { notFound } from "next/navigation";
 
-export default async function EditMemberPage({ params }: { params: { slug: string; memberId: string } }) {
+export default async function EditMemberPage({ params }: { params: Promise<{ slug: string; memberId: string }> }) {
     const { slug, memberId } = await params;
     const league = await getLeagueAdmin(slug);
 

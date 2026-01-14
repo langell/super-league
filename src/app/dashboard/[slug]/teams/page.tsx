@@ -7,7 +7,7 @@ import { Plus, Users, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import { createTeam, deleteTeam, removeMemberFromTeam } from "@/app/actions";
 
-export default async function TeamsPage({ params }: { params: { slug: string } }) {
+export default async function TeamsPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const league = await getLeagueAdmin(slug);
 

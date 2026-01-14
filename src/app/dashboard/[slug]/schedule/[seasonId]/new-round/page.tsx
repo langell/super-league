@@ -7,7 +7,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { createRound } from "@/app/actions";
 import { notFound } from "next/navigation";
 
-export default async function NewRoundPage({ params }: { params: { slug: string; seasonId: string } }) {
+export default async function NewRoundPage({ params }: { params: Promise<{ slug: string; seasonId: string }> }) {
     const { slug, seasonId } = await params;
     await getLeagueAdmin(slug);
 

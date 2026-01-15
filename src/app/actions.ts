@@ -18,7 +18,9 @@ export async function scanScorecardAction(formData: FormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const imageFile = formData.get("scorecard") as File;
-    if (!imageFile) throw new Error("No image provided");
+    if (!imageFile || imageFile.size === 0) {
+        throw new Error("No image provided");
+    }
 
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) throw new Error("Google AI API Key not configured");

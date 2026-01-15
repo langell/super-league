@@ -26,6 +26,8 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
         courseCity: string | null;
         courseState: string | null;
         courseId: string;
+        holesCount: number;
+        roundType: string | null;
     }[] = [];
     if (currentSeason) {
         scheduledRounds = await db
@@ -37,6 +39,8 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
                 courseCity: courses.city,
                 courseState: courses.state,
                 courseId: courses.id,
+                holesCount: rounds.holesCount,
+                roundType: rounds.roundType,
             })
             .from(rounds)
             .innerJoin(courses, eq(rounds.courseId, courses.id))
@@ -148,6 +152,11 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
                                                         <div className="flex items-center gap-2 text-sm text-zinc-500">
                                                             <MapPin size={14} />
                                                             {round.courseCity}, {round.courseState}
+                                                            <span className="mx-2">•</span>
+                                                            <span className="text-zinc-400">
+                                                                {round.holesCount} Holes
+                                                                {round.roundType !== '18_holes' && ` (${round.roundType === 'front_9' ? 'Front' : 'Back'})`}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>

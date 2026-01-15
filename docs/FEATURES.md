@@ -30,10 +30,12 @@
 - [x] **Seasons**: Define active periods (e.g., "Spring 2026").
 - [x] **Rounds**: Schedule events (Auto-populate or manual).
 - [x] **Matches**: Generate pairings for rounds.
+- [x] **Format Support**: 9 vs 18 Holes, Front/Back Rotation.
 
 ### 6. Scoring & Handicaps
-- [ ] **Score Entry**: UI for inputting hole-by-hole scores.
-- [ ] **Live Leaderboard**: Real-time calculation of net scores.
+- [x] **Score Entry**: Mobile-friendly format-aware scorecard (Front/Back/18).
+- [x] **Live Leaderboard**: Real-time Match Play status (e.g. "2UP").
+- [x] **Season Standings**: Points-based aggregation (W/L/T).
 - [ ] **Handicap Calculation**: Service to update indices based on rounds.
 
 ### 7. Communication

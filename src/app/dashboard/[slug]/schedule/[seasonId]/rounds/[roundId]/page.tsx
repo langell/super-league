@@ -40,6 +40,7 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
                 id: matchPlayers.id,
                 userId: matchPlayers.userId,
                 teamId: matchPlayers.teamId,
+                teeId: matchPlayers.teeId,
                 startingHandicap: matchPlayers.startingHandicap,
                 firstName: user.firstName,
                 lastName: user.lastName,
@@ -147,7 +148,24 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
                                     <div key={match.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl relative overflow-hidden">
                                         {/* Header / Match Number */}
                                         <div className="px-6 py-3 bg-zinc-950/50 border-b border-zinc-800 flex justify-between items-center">
-                                            <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Match {i + 1}</div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Match {i + 1}</div>
+                                                {match.players.some(p => !p.teeId) ? (
+                                                    <Link
+                                                        href={`/dashboard/${slug}/matches/${match.id}/setup`}
+                                                        className="px-3 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors flex items-center gap-1"
+                                                    >
+                                                        Start Match
+                                                    </Link>
+                                                ) : (
+                                                    <Link
+                                                        href={`/dashboard/${slug}/scorecard/${match.id}`}
+                                                        className="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors"
+                                                    >
+                                                        Enter Scores
+                                                    </Link>
+                                                )}
+                                            </div>
                                             <form action={deleteMatch}>
                                                 <input type="hidden" name="leagueSlug" value={slug} />
                                                 <input type="hidden" name="matchId" value={match.id} />

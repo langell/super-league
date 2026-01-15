@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { eq, and, asc } from "drizzle-orm";
-import { organizations, leagueMembers, courses, tees, user, holes, teams, teamMembers, seasons, rounds, matches, matchPlayers } from "@/db/schema";
+import { organizations, leagueMembers, courses, tees, user, holes, teams, teamMembers, seasons, rounds, matches, matchPlayers, scores } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCourseDetails } from "@/lib/course-api";
@@ -697,6 +697,8 @@ export async function createSeason(formData: FormData) {
     const endDateStr = formData.get("endDate") as string;
     const frequencyDay = formData.get("frequencyDay") as string; // 0-6
     const defaultCourseId = formData.get("defaultCourseId") as string || null;
+    const defaultHolesCount = parseInt(formData.get("defaultHolesCount") as string) || 18; // 9 or 18
+    const rotationStrategy = formData.get("rotationStrategy") as string || "18_holes"; // "18_holes", "front_9", "back_9", "rotate"
 
     if (!name) throw new Error("Name is required");
 
@@ -737,14 +739,27 @@ export async function createSeason(formData: FormData) {
 
             const newRounds = [];
             let roundGuard = 0;
+            let rotationIndex = 0; // 0 = front, 1 = back
 
             // Generate rounds
             while (currentDate <= end && roundGuard < 104) { // Limit to 2 years (104 weeks)
+                let roundType = "18_holes";
+                if (defaultHolesCount === 9) {
+                    if (rotationStrategy === "rotate") {
+                        roundType = rotationIndex % 2 === 0 ? "front_9" : "back_9";
+                        rotationIndex++;
+                    } else {
+                        roundType = rotationStrategy; // "front_9" or "back_9"
+                    }
+                }
+
                 newRounds.push({
                     seasonId: season.id,
                     courseId: defaultCourseId || null,
                     date: new Date(currentDate), // This will save as specific timestamp
                     status: "scheduled",
+                    holesCount: defaultHolesCount,
+                    roundType: roundType
                 });
 
                 // Advance 1 week
@@ -770,6 +785,8 @@ export async function createRound(formData: FormData) {
     const seasonId = formData.get("seasonId") as string;
     const courseId = formData.get("courseId") as string;
     const dateStr = formData.get("date") as string;
+    const holesCount = parseInt(formData.get("holesCount") as string) || 18;
+    const roundType = formData.get("roundType") as string || "18_holes";
 
     if (!courseId || !dateStr) throw new Error("Missing fields");
 
@@ -777,7 +794,9 @@ export async function createRound(formData: FormData) {
         seasonId,
         courseId,
         date: new Date(dateStr),
-        status: "scheduled"
+        status: "scheduled",
+        holesCount,
+        roundType
     });
 
     revalidatePath(`/dashboard/${leagueSlug}/schedule`);
@@ -877,12 +896,16 @@ export async function updateRound(formData: FormData) {
     const courseId = formData.get("courseId") as string || null;
     const dateStr = formData.get("date") as string;
     const status = formData.get("status") as string;
+    const holesCount = parseInt(formData.get("holesCount") as string) || 18;
+    const roundType = formData.get("roundType") as string || "18_holes";
 
     await db.update(rounds)
         .set({
-            courseId,
-            date: dateStr ? new Date(dateStr) : undefined,
+            courseId: courseId || null,
+            date: new Date(dateStr),
             status,
+            holesCount,
+            roundType,
         })
         .where(eq(rounds.id, roundId));
 
@@ -1082,4 +1105,121 @@ export async function generateSchedule(formData: FormData) {
     }
 
     revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+}
+
+export async function saveScorecard(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const matchId = formData.get("matchId") as string;
+    const leagueSlug = formData.get("leagueSlug") as string;
+    // We expect inputs like "player-[matchPlayerId]-hole-[holeId]" -> value
+
+    // 1. Get Match Info to verify
+    const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+    if (!match) throw new Error("Match not found");
+
+    // 2. Iterate through formData keys
+    // We'll process them in a loop or collect and batched insert
+    const updates: { matchPlayerId: string; holeId: string; grossScore: number }[] = [];
+
+    // Simple strategy: Collect entries
+    for (const [key, value] of formData.entries()) {
+        if (key.startsWith("player-") && key.includes("-hole-")) {
+            // "player-[mpId]-hole-[hId]"
+            // const parts = key.split("-");
+            // parts[0] = "player"
+            // parts[1] = matchPlayerId (uuid)
+            // parts[2] = "hole"
+            // parts[3] = holeId (uuid) -- wait, UUIDs can contain hyphens? YES.
+            // Split by known separators is safer.
+
+            // Robust parsing:
+            // pattern: player-(matchPlayerId)-hole-(holeId)
+            // But UUIDs have dashes. regex is safer.
+            const matchResult = key.match(/^player-(.+)-hole-(.+)$/);
+            if (matchResult) {
+                const matchPlayerId = matchResult[1];
+                const holeId = matchResult[2];
+                const grossScore = parseInt(value as string);
+
+                if (!isNaN(grossScore) && grossScore > 0) {
+                    updates.push({ matchPlayerId, holeId, grossScore });
+                }
+            }
+        }
+    }
+
+    // 3. Batched Upsert or Delete/Insert?
+    // Postgres upsert with ON CONFLICT is good but Drizzle syntax varies.
+    // For simplicity, let's delete existing scores for these combinations and re-insert.
+    // Ideally we update individually or use raw sql upsert.
+    // Let's use individual deletes/inserts for absolute safety for now or find/update.
+
+    // Better: Filter valid updates
+    if (updates.length > 0) {
+        // Warning: This loop is N+1 DB calls if not careful.
+        // For a scorecard, 18 holes * 4 players = 72 queries. Not great but acceptable for MVP.
+        // Optimization: Use db.transaction
+        await db.transaction(async (tx) => {
+            for (const update of updates) {
+                // Remove existing score for this player/hole
+                await tx.delete(scores).where(
+                    and(
+                        eq(scores.matchPlayerId, update.matchPlayerId),
+                        eq(scores.holeId, update.holeId)
+                    )
+                );
+
+                // Insert new
+                await tx.insert(scores).values({
+                    matchPlayerId: update.matchPlayerId,
+                    holeId: update.holeId,
+                    grossScore: update.grossScore,
+                    updatedBy: session.user?.id
+                });
+            }
+        });
+    }
+
+    revalidatePath(`/dashboard/${leagueSlug}/scorecard/${matchId}`);
+}
+
+export async function setupMatch(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const matchId = formData.get("matchId") as string;
+
+    // Iterate over keys to find player tee assignments
+    // key format: "player-{matchPlayerId}-tee" -> value: teeId
+
+    const updates: { matchPlayerId: string; teeId: string }[] = [];
+
+    for (const [key, value] of formData.entries()) {
+        if (key.startsWith("player-") && key.endsWith("-tee")) {
+            // "player-[id]-tee"
+            const matchPlayerId = key.replace("player-", "").replace("-tee", "");
+            const teeId = value as string;
+
+            if (teeId && teeId !== "") {
+                updates.push({ matchPlayerId, teeId });
+            }
+        }
+    }
+
+    if (updates.length > 0) {
+        await db.transaction(async (tx) => {
+            for (const update of updates) {
+                await tx.update(matchPlayers)
+                    .set({ teeId: update.teeId })
+                    .where(eq(matchPlayers.id, update.matchPlayerId));
+            }
+        });
+    }
+
+    revalidatePath(`/dashboard/${leagueSlug}/scorecard/${matchId}`);
+    // Redirect to scorecard after setup
+    redirect(`/dashboard/${leagueSlug}/scorecard/${matchId}`);
 }

@@ -58,6 +58,30 @@ export default async function NewRoundPage({ params }: { params: Promise<{ slug:
                             />
                         </div>
 
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-zinc-500 uppercase">Holes</label>
+                                <select
+                                    name="holesCount"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors"
+                                >
+                                    <option value="18">18 Holes</option>
+                                    <option value="9">9 Holes</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-zinc-500 uppercase">Type / Side</label>
+                                <select
+                                    name="roundType"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors"
+                                >
+                                    <option value="18_holes">18 Holes</option>
+                                    <option value="front_9">Front 9</option>
+                                    <option value="back_9">Back 9</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-2xl shadow-xl shadow-emerald-500/10 transition-all flex justify-center gap-2 items-center">
                             <Save size={20} />
                             Save Round

@@ -24,6 +24,7 @@ export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
     const navItems = [
         { name: "Dashboard", href: `/dashboard/${slug}`, icon: LayoutGrid, exact: true },
         { name: "Schedule", href: `/dashboard/${slug}/schedule`, icon: Calendar, exact: false },
+        { name: "Leaderboard", href: `/dashboard/${slug}/leaderboard`, icon: Trophy, exact: false },
         { name: "Members", href: `/dashboard/${slug}/members`, icon: Users, exact: false },
         { name: "Teams", href: `/dashboard/${slug}/teams`, icon: Flag, exact: false },
         { name: "Courses", href: `/dashboard/${slug}/courses`, icon: MapPin, exact: false },
@@ -62,8 +63,8 @@ export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${active
-                                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                                    : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                : "text-zinc-400 hover:text-white hover:bg-zinc-900"
                                 }`}
                         >
                             <item.icon size={18} className={active ? "text-emerald-500" : "text-zinc-500"} />

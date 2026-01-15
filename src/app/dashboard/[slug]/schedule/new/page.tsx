@@ -94,6 +94,31 @@ export default async function NewSeasonPage({ params }: { params: Promise<{ slug
                                     </select>
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase">Default Holes</label>
+                                    <select
+                                        name="defaultHolesCount"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors"
+                                    >
+                                        <option value="18">18 Holes</option>
+                                        <option value="9">9 Holes</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase">Rotation Strategy (if 9)</label>
+                                    <select
+                                        name="rotationStrategy"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors"
+                                    >
+                                        <option value="18_holes">N/A (18 Holes)</option>
+                                        <option value="rotate">Rotate Front/Back</option>
+                                        <option value="front_9">Always Front 9</option>
+                                        <option value="back_9">Always Back 9</option>
+                                    </select>
+                                </div>
+                            </div>
                             <p className="text-xs text-zinc-500 mt-2">
                                 If dates and day are selected, we will automatically create rounds for every week between the dates.
                             </p>

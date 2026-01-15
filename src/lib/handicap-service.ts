@@ -18,7 +18,7 @@ export async function updatePlayerHandicap(userId: string, organizationId: strin
         })
         .from(scores)
         .innerJoin(matchPlayers, eq(scores.matchPlayerId, matchPlayers.id))
-        .innerJoin(tees, eq(tees.id, tees.id)) // Simplified join logic for now
+        .innerJoin(tees, eq(matchPlayers.teeId, tees.id))
         .where(eq(matchPlayers.userId, userId))
         .limit(20)
         .orderBy(desc(scores.updatedAt));

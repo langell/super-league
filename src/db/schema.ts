@@ -180,6 +180,8 @@ export const rounds = pgTable("rounds", {
         .references(() => courses.id),
     date: timestamp("date").notNull(),
     status: varchar("status", { length: 20 }).notNull().default("scheduled"), // "scheduled", "in_progress", "completed"
+    holesCount: integer("holes_count").default(18).notNull(), // 9 or 18
+    roundType: varchar("round_type", { length: 20 }).default("18_holes"), // "front_9", "back_9", "18_holes"
 });
 
 // Matches (Pairings within a round)
@@ -201,6 +203,7 @@ export const matchPlayers = pgTable("match_players", {
         .references(() => user.id)
         .notNull(),
     teamId: uuid("team_id"), // Optional grouping for 2v2
+    teeId: uuid("tee_id").references(() => tees.id), // Which tees they are playing
     startingHandicap: decimal("starting_handicap", { precision: 4, scale: 1 }),
 });
 

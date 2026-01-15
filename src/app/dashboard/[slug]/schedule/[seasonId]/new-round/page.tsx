@@ -17,7 +17,7 @@ export default async function NewRoundPage({ params }: { params: Promise<{ slug:
     if (!season) notFound();
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white py-12 px-6">
+        <div className="min-h-screen bg-background text-white py-12 px-6">
             <div className="max-w-2xl mx-auto">
                 <Link href={`/dashboard/${slug}/schedule`} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white mb-8">
                     <ArrowLeft size={20} />

@@ -6,6 +6,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Trophy, Plus, ArrowRight } from "lucide-react";
 
+const ICON_SIZE_MEDIUM = 24;
+const ICON_SIZE_SMALL = 20;
+
 export default async function DashboardPage() {
     const session = await auth();
 
@@ -23,14 +26,14 @@ export default async function DashboardPage() {
         })
         .from(leagueMembers)
         .innerJoin(organizations, eq(leagueMembers.organizationId, organizations.id))
-        .where(eq(leagueMembers.userId, session.user.id!));
+        .where(eq(leagueMembers.userId, session.user.id ?? ""));
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white">
+        <div className="min-h-screen bg-background text-white">
             <nav className="border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Trophy className="text-emerald-500" size={24} />
+                        <Trophy className="text-emerald-500" size={ICON_SIZE_MEDIUM} />
                         <span className="font-bold text-xl tracking-tight">Super League</span>
                     </div>
                     <div className="flex items-center gap-4">
@@ -49,7 +52,7 @@ export default async function DashboardPage() {
                         href="/dashboard/new"
                         className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl transition-all"
                     >
-                        <Plus size={20} />
+                        <Plus size={ICON_SIZE_SMALL} />
                         Create New League
                     </Link>
                 </div>
@@ -82,7 +85,7 @@ function LeagueCard({ league }: { league: League }) {
     return (
         <div className="group p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500/50 transition-all">
             <div className="flex justify-between items-start mb-6">
-                <Trophy className="text-emerald-500" size={24} />
+                <Trophy className="text-emerald-500" size={ICON_SIZE_MEDIUM} />
                 <div className="px-3 py-1 bg-zinc-800 rounded-full text-[10px] uppercase font-bold text-zinc-400">
                     {league.role}
                 </div>
@@ -94,7 +97,7 @@ function LeagueCard({ league }: { league: League }) {
                 className="flex items-center justify-between pt-6 border-t border-zinc-800/50 group-hover:text-emerald-400 transition-all"
             >
                 <span>Enter Console</span>
-                <ArrowRight size={20} />
+                <ArrowRight size={ICON_SIZE_SMALL} />
             </Link>
         </div>
     );

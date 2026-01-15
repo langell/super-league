@@ -20,7 +20,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ slu
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white py-20 px-6 font-sans">
+        <div className="min-h-screen bg-background text-white py-20 px-6 font-sans">
             <div className="max-w-2xl mx-auto">
                 <Link href={`/dashboard/${slug}/courses`} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white mb-12 transition-colors">
                     <ArrowLeft size={18} />
@@ -57,7 +57,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ slu
                             <span className="w-full border-t border-zinc-900 border-dashed"></span>
                         </div>
                         <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest text-zinc-800">
-                            <span className="bg-[#0a0a0a] px-4">Or edit manually</span>
+                            <span className="bg-background px-4">Or edit manually</span>
                         </div>
                     </div>
 
@@ -228,7 +228,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ slu
                             <span className="w-full border-t border-zinc-900 border-dashed"></span>
                         </div>
                         <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest text-zinc-800">
-                            <span className="bg-[#0a0a0a] px-4">Danger Zone</span>
+                            <span className="bg-background px-4">Danger Zone</span>
                         </div>
                     </div>
 

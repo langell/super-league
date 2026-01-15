@@ -8,6 +8,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCourseDetails } from "@/lib/course-api";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import logger from "@/lib/logger";
+import { memberSchema, validateRequest, type ActionResponse } from "@/lib/validations";
 
 // ... existing actions ...
 
@@ -73,23 +75,32 @@ export async function scanScorecardAction(formData: FormData) {
     try {
         return JSON.parse(jsonString);
     } catch {
-        console.error("Failed to parse Gemini response:", responseText);
+        logger.error({ responseText }, "Failed to parse Gemini response");
         throw new Error("Failed to extract data from scorecard image.");
     }
 }
 
-export async function addMemberToLeague(prevState: unknown, formData: FormData) {
-    const session = await auth();
-    if (!session?.user) return { message: "Unauthorized" };
 
+
+export async function addMemberToLeague(prevState: unknown, formData: FormData): Promise<ActionResponse> {
+    const session = await auth();
+    if (!session?.user) return { success: false, message: "Unauthorized" };
+
+    const validation = validateRequest(memberSchema, {
+        firstName: (formData.get("name") as string)?.split(' ')[0] || "",
+        lastName: (formData.get("name") as string)?.split(' ').slice(1).join(' ') || "Player",
+        email: formData.get("email") as string,
+        role: (formData.get("role") as string) || "player",
+    });
+
+    if (!validation.success) {
+        return { success: false, message: "Validation failed", fieldErrors: validation.errors };
+    }
+
+    const { email, firstName, lastName, role } = validation.data;
+    const name = `${firstName} ${lastName}`;
     const organizationId = formData.get("organizationId") as string;
     const leagueSlug = formData.get("leagueSlug") as string;
-    const email = (formData.get("email") as string)?.toLowerCase();
-    const name = formData.get("name") as string;
-    const role = formData.get("role") as "admin" | "player" | "sub";
-
-    if (!email) return { message: "Email is required" };
-    if (!name) return { message: "Name is required" };
 
     // 1. Verify caller is admin
     const [membership] = await db
@@ -98,13 +109,13 @@ export async function addMemberToLeague(prevState: unknown, formData: FormData) 
         .where(
             and(
                 eq(leagueMembers.organizationId, organizationId),
-                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.userId, session.user.id ?? ""),
                 eq(leagueMembers.role, "admin")
             )
         )
         .limit(1);
 
-    if (!membership) return { message: "Unauthorized - Not an Admin" };
+    if (!membership) return { success: false, message: "Unauthorized - Not an Admin" };
 
     try {
         // 2. Find or create user
@@ -147,21 +158,21 @@ export async function addMemberToLeague(prevState: unknown, formData: FormData) 
 
         if (!existingMember) {
             await db.insert(leagueMembers).values({
-                userId: targetUser.id,
                 organizationId,
+                userId: targetUser.id,
                 role,
             });
-        } else {
-            return { message: "User is already a member of this league." };
+            logger.info({ leagueSlug, email, role }, "New member added to league");
+            revalidatePath(`/dashboard/${leagueSlug}/members`);
+            return { success: true, message: "Member added successfully" };
         }
 
+        return { success: true, message: "User is already a member of this league." };
     } catch (error) {
-        console.error(error);
-        return { message: "Failed to add member" };
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        logger.error({ error: errorMessage, leagueSlug, email }, "Failed to add member to league");
+        return { success: false, message: "Internal server error" };
     }
-
-    revalidatePath(`/dashboard/${leagueSlug}/members`);
-    return { message: "success" };
 }
 
 export async function removeMemberFromLeague(formData: FormData) {
@@ -182,7 +193,7 @@ export async function removeMemberFromLeague(formData: FormData) {
         .where(
             and(
                 eq(leagueMembers.organizationId, memberToDelete.organizationId),
-                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.userId, session.user.id ?? ""),
                 eq(leagueMembers.role, "admin")
             )
         )
@@ -214,7 +225,7 @@ export async function createLeague(formData: FormData) {
 
     // 2. Add the user as the admin member
     await db.insert(leagueMembers).values({
-        userId: session.user.id!,
+        userId: session.user.id ?? "",
         organizationId: org.id,
         role: "admin",
     });
@@ -531,7 +542,7 @@ export async function updateLeagueSettings(formData: FormData) {
         .where(
             and(
                 eq(leagueMembers.organizationId, leagueId),
-                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.userId, session.user.id ?? ""),
                 eq(leagueMembers.role, "admin")
             )
         )
@@ -643,7 +654,7 @@ export async function updateMember(formData: FormData) {
         .where(
             and(
                 eq(leagueMembers.organizationId, memberToUpdate.organizationId),
-                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.userId, session.user.id ?? ""),
                 eq(leagueMembers.role, "admin")
             )
         )

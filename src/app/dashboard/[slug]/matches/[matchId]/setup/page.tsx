@@ -53,7 +53,7 @@ export default async function MatchSetupPage({ params }: { params: Promise<{ slu
         .where(eq(tees.courseId, match.courseId));
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white">
+        <div className="min-h-screen bg-background text-white">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900 px-4 py-4">
                 <div className="max-w-2xl mx-auto flex items-center justify-between">

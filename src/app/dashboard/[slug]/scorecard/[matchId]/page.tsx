@@ -57,7 +57,7 @@ export default async function MatchScorecardPage({ params }: { params: Promise<{
     // OR just fetch ALL holes for the course?
 
     // Better: Fetch holes for each player's specific tee.
-    // If no tee set for player, we need to prompt to select one!
+    // If no tee set for player, we need to prompt to select one.
 
     // Check if any player is missing a tee
     const missingTees = players.some(p => !p.teeId);
@@ -93,7 +93,7 @@ export default async function MatchScorecardPage({ params }: { params: Promise<{
         .orderBy(asc(holes.holeNumber));
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white">
+        <div className="min-h-screen bg-background text-white">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900 px-4 py-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">

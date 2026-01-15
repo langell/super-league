@@ -4,6 +4,15 @@ import { rounds, matches, matchPlayers, scores, teams, user, holes, seasons } fr
 import { eq, desc, and, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { Trophy, Activity, Calendar, Play } from "lucide-react";
+
+const HOLES_PER_ROUND = 18;
+const MAX_DASHBOARD_LIVE_MATCHES = 3;
+const TOP_STANDINGS_LIMIT = 5;
+
+const ICON_SIZE_TINY = 14;
+const ICON_SIZE_SMALL = 16;
+const ICON_SIZE_MEDIUM = 20;
+const ICON_SIZE_LARGE = 32;
 import Image from "next/image";
 
 type PlayerAccumulator = {
@@ -87,13 +96,16 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                     teams: new Map(),
                 });
             }
-            const match = matchesMap.get(row.matchId)!;
+            const match = matchesMap.get(row.matchId);
+            if (!match) return;
+
             const teamId = row.teamId || `individual-${row.userId}`;
 
             if (!match.teams.has(teamId)) {
                 match.teams.set(teamId, { id: teamId, players: new Map() });
             }
-            const team = match.teams.get(teamId)!;
+            const team = match.teams.get(teamId);
+            if (!team) return;
 
             if (!team.players.has(row.playerId)) {
                 team.players.set(row.playerId, {
@@ -105,7 +117,10 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
             }
 
             if (row.grossScore && row.holeNumber) {
-                team.players.get(row.playerId)!.scores.set(row.holeNumber, row.grossScore);
+                const player = team.players.get(row.playerId);
+                if (player) {
+                    player.scores.set(row.holeNumber, row.grossScore);
+                }
             }
         });
 
@@ -124,7 +139,7 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
             let holesWonB = 0;
             let holesPlayed = 0;
 
-            for (let h = 1; h <= 18; h++) {
+            for (let h = 1; h <= HOLES_PER_ROUND; h++) {
                 const scoresA = Array.from(teamA.players.values()).map(p => p.scores.get(h)).filter((s): s is number => s !== undefined && s > 0);
                 const bestA = scoresA.length > 0 ? Math.min(...scoresA) : null;
                 const scoresB = Array.from(teamB.players.values()).map(p => p.scores.get(h)).filter((s): s is number => s !== undefined && s > 0);
@@ -196,7 +211,7 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
             let holesWonA = 0;
             let holesWonB = 0;
 
-            for (let h = 1; h <= 18; h++) {
+            for (let h = 1; h <= HOLES_PER_ROUND; h++) {
                 const scoresA = tA.scores.get(h) || [];
                 const scoresB = tB.scores.get(h) || [];
                 const bestA = scoresA.length > 0 ? Math.min(...scoresA) : null;
@@ -216,7 +231,11 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
             }
         });
     }
-    const sortedStandings = Array.from(standingsMap.values()).sort((a, b) => b.points - a.points).slice(0, 5); // Top 5
+
+    const leaderboardHref = `/dashboard/${slug}/leaderboard`;
+    const scheduleHref = `/dashboard/${slug}/schedule`;
+
+    const sortedStandings = Array.from(standingsMap.values()).sort((a, b) => b.points - a.points).slice(0, TOP_STANDINGS_LIMIT); // Top 5
     // --- END LOGIC ---
 
     return (
@@ -227,8 +246,8 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                     <p className="text-zinc-400">Dashboard for {league.name}</p>
                 </div>
                 <div className="flex gap-3">
-                    <Link href={`/dashboard/${slug}/schedule`} className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
-                        <Calendar size={16} />
+                    <Link href={scheduleHref} className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
+                        <Calendar size={ICON_SIZE_SMALL} />
                         Schedule
                     </Link>
                 </div>
@@ -242,7 +261,7 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                             <div className="flex justify-between items-start mb-6 relative z-10">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${roundData.status === 'in_progress' ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                                        {roundData.status === 'in_progress' ? <Activity size={20} className="animate-pulse" /> : <Calendar size={20} />}
+                                        {roundData.status === 'in_progress' ? <Activity size={ICON_SIZE_MEDIUM} className="animate-pulse" /> : <Calendar size={ICON_SIZE_MEDIUM} />}
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-white text-lg leading-tight">
@@ -251,13 +270,13 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                                         <p className="text-zinc-400 text-xs">{roundData.date.toDateString()}</p>
                                     </div>
                                 </div>
-                                <Link href={`/dashboard/${slug}/leaderboard`} className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">
+                                <Link href={leaderboardHref} className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">
                                     View Full Leaderboard &rarr;
                                 </Link>
                             </div>
 
                             <div className="space-y-3 relative z-10">
-                                {liveMatches.slice(0, 3).map(match => (
+                                {liveMatches.slice(0, MAX_DASHBOARD_LIVE_MATCHES).map(match => (
                                     <div key={match.id} className="bg-zinc-950/50 rounded-xl p-3 flex justify-between items-center border border-zinc-800/50">
                                         <div className="flex items-center gap-3">
                                             {/* Team A Avatars */}
@@ -300,17 +319,17 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
 
                             {/* Quick Action */}
                             <div className="mt-6 pt-6 border-t border-zinc-800 flex justify-end">
-                                <Link href={`/dashboard/${slug}/schedule`} className="inline-flex items-center gap-2 text-sm font-bold text-emerald-500 hover:text-emerald-400">
-                                    Manage Round <Play size={14} />
+                                <Link href={scheduleHref} className="inline-flex items-center gap-2 text-sm font-bold text-emerald-500 hover:text-emerald-400">
+                                    Manage Round <Play size={ICON_SIZE_TINY} />
                                 </Link>
                             </div>
                         </div>
                     ) : (
                         <div className="bg-zinc-900 border border-dashed border-zinc-800 rounded-3xl p-12 text-center">
-                            <Calendar className="mx-auto mb-4 text-zinc-700" size={32} />
+                            <Calendar className="mx-auto mb-4 text-zinc-700" size={ICON_SIZE_LARGE} />
                             <h3 className="text-lg font-bold text-zinc-400">No scheduled rounds</h3>
                             <p className="text-zinc-600 mb-6 text-sm">Create a schedule to get started.</p>
-                            <Link href={`/dashboard/${slug}/schedule`} className="px-4 py-2 bg-zinc-800 text-white rounded-lg text-sm font-bold">
+                            <Link href={scheduleHref} className="px-4 py-2 bg-zinc-800 text-white rounded-lg text-sm font-bold">
                                 Create Schedule
                             </Link>
                         </div>
@@ -322,10 +341,10 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                     <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-2">
-                                <Trophy className="text-yellow-500" size={20} />
+                                <Trophy className="text-yellow-500" size={ICON_SIZE_MEDIUM} />
                                 <h3 className="font-bold text-white">Standings</h3>
                             </div>
-                            <Link href={`/dashboard/${slug}/leaderboard`} className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">
+                            <Link href={leaderboardHref} className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">
                                 View All
                             </Link>
                         </div>

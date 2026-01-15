@@ -4,18 +4,23 @@ import { courses } from "@/db/schema";
 import Link from "next/link";
 import { MapPin, Edit } from "lucide-react";
 
+const ICON_SIZE_SMALL = 16;
+const CONTAINER_PADDING_X = 8;
+const CONTAINER_PADDING_Y = 12;
+const ITEMS_GAP = 4;
+
 export default async function LeagueCoursesPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     await getLeagueAdmin(slug);
     const allCourses = await db.select().from(courses);
 
     return (
-        <div className="max-w-7xl mx-auto py-12 px-8">
+        <div className={`max-w-7xl mx-auto py-${CONTAINER_PADDING_Y} px-${CONTAINER_PADDING_X}`}>
             <div className="flex justify-between items-end mb-12">
                 <h1 className="text-4xl font-bold">Course Management</h1>
                 <Link href={`/dashboard/${slug}/courses/new`} className="px-6 py-3 bg-emerald-500 text-black font-semibold rounded-xl">Add New Course</Link>
             </div>
-            <div className="grid gap-4">
+            <div className={`grid gap-${ITEMS_GAP}`}>
                 {allCourses.map((course) => (
                     <div key={course.id} className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -26,7 +31,7 @@ export default async function LeagueCoursesPage({ params }: { params: Promise<{ 
                             </div>
                         </div>
                         <Link href={`/dashboard/${slug}/courses/${course.id}/edit`} className="p-2 text-zinc-500 hover:text-white transition-colors">
-                            <Edit size={16} />
+                            <Edit size={ICON_SIZE_SMALL} />
                         </Link>
                     </div>
                 ))}

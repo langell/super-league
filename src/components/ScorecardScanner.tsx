@@ -4,6 +4,14 @@ import { useState } from "react";
 import { Camera, Loader2, AlertCircle, Sparkles, Save } from "lucide-react";
 import { scanScorecardAction, saveExtractedCourseAction, updateCourseFromScanAction } from "@/app/actions";
 
+const ICON_SIZE_LARGE = 32;
+const ICON_SIZE_MEDIUM = 20;
+const ICON_SIZE_SMALL = 16;
+const ICON_SIZE_HERO = 120;
+const HOLES_FRONT_NINE = 9;
+const HOLES_BACK_NINE = 18;
+const GRID_COLS = 9;
+
 interface ExtractedHole {
     holeNumber: number;
     par: number;
@@ -89,7 +97,7 @@ export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps
             {!extractedData ? (
                 <div className="flex flex-col items-center justify-center p-12 bg-zinc-900/40 border-2 border-dashed border-zinc-800 rounded-3xl text-center group hover:border-emerald-500/50 transition-all">
                     <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500 mb-6 group-hover:scale-110 transition-transform">
-                        <Camera size={32} />
+                        <Camera size={ICON_SIZE_LARGE} />
                     </div>
                     <h3 className="text-xl font-bold mb-2">{courseId ? "Update via Scorecard Scan" : "Scan Physical Scorecard"}</h3>
                     <p className="text-zinc-500 max-w-xs mb-8">
@@ -114,12 +122,12 @@ export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps
                         >
                             {isScanning ? (
                                 <>
-                                    <Loader2 className="animate-spin" size={20} />
+                                    <Loader2 className="animate-spin" size={ICON_SIZE_MEDIUM} />
                                     Analyzing Scorecard...
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles size={20} />
+                                    <Sparkles size={ICON_SIZE_MEDIUM} />
                                     Run AI Extraction
                                 </>
                             )}
@@ -128,7 +136,7 @@ export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps
 
                     {error && (
                         <div className="mt-6 flex items-center gap-2 text-red-400 bg-red-400/10 px-4 py-2 rounded-lg text-sm">
-                            <AlertCircle size={16} />
+                            <AlertCircle size={ICON_SIZE_SMALL} />
                             {error}
                         </div>
                     )}
@@ -137,7 +145,7 @@ export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps
                 <div className="space-y-6">
                     <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-3xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-10">
-                            <Sparkles size={120} className="text-emerald-500" />
+                            <Sparkles size={ICON_SIZE_HERO} className="text-emerald-500" />
                         </div>
 
                         <div className="flex justify-between items-start mb-8">
@@ -194,8 +202,8 @@ export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-9 gap-1">
-                                        {tee.holes.slice(0, 9).map(h => (
+                                    <div className={`grid grid-cols-${GRID_COLS} gap-1`}>
+                                        {tee.holes.slice(0, HOLES_FRONT_NINE).map(h => (
                                             <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg flex flex-col justify-between h-20">
                                                 <div className="text-[10px] text-zinc-600 font-bold">{h.holeNumber}</div>
                                                 <div className="text-sm font-black text-white">{h.par}</div>
@@ -206,8 +214,8 @@ export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="grid grid-cols-9 gap-1 mt-1">
-                                        {tee.holes.slice(9, 18).map(h => (
+                                    <div className={`grid grid-cols-${GRID_COLS} gap-1 mt-1`}>
+                                        {tee.holes.slice(HOLES_FRONT_NINE, HOLES_BACK_NINE).map(h => (
                                             <div key={h.holeNumber} className="text-center p-2 bg-zinc-900/50 rounded-lg flex flex-col justify-between h-20">
                                                 <div className="text-[10px] text-zinc-600 font-bold">{h.holeNumber}</div>
                                                 <div className="text-sm font-black text-white">{h.par}</div>
@@ -227,7 +235,7 @@ export function ScorecardScanner({ leagueSlug, courseId }: ScorecardScannerProps
                             disabled={isSaving}
                             className="w-full mt-8 py-5 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-sm rounded-2xl shadow-2xl shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all disabled:opacity-50"
                         >
-                            {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                            {isSaving ? <Loader2 className="animate-spin" size={ICON_SIZE_MEDIUM} /> : <Save size={ICON_SIZE_MEDIUM} />}
                             {isSaving ? "Saving Database..." : "Confirm & Save Course"}
                         </button>
                     </div>

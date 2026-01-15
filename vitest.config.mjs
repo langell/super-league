@@ -12,16 +12,18 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
+            include: [
+                'src/lib/**/*.ts',
+                'src/app/actions.ts',
+                'src/app/api/**/*.ts',
+            ],
             exclude: [
-                'node_modules/',
-                'e2e/',
-                'src/test/setup.ts',
+                '**/node_modules/**',
+                '**/e2e/**',
+                'src/test/**',
                 '**/*.d.ts',
-                '**/*.config.ts',
-                '**/*.config.js',
-                'src/db/**', // Usually integration tested or mocked
-                'src/components/ui/**', // Shaden UI components
-                'src/app/api/auth/**', // Auth.js internals
+                '**/*.test.ts',
+                '**/*.test.tsx',
             ],
             thresholds: {
                 lines: 80,

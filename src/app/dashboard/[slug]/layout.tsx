@@ -14,7 +14,7 @@ export default async function DashboardLayout({
     const league = await getLeagueAdmin(slug);
 
     return (
-        <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden font-sans">
+        <div className="flex h-screen bg-background text-white overflow-hidden font-sans">
             <DashboardSidebar slug={slug} leagueName={league.name} />
 
             <main className="flex-1 overflow-y-auto">

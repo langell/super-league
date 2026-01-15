@@ -58,7 +58,7 @@ export default async function AddTeamMemberPage({ params }: { params: Promise<{ 
         );
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white py-12 px-6">
+        <div className="min-h-screen bg-background text-white py-12 px-6">
             <div className="max-w-4xl mx-auto">
                 <Link href={`/dashboard/${slug}/teams`} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white mb-8">
                     <ArrowLeft size={20} />

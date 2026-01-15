@@ -12,7 +12,7 @@ export default async function NewLeaguePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white py-20 px-6">
+        <div className="min-h-screen bg-background text-white py-20 px-6">
             <div className="max-w-xl mx-auto">
                 <Link href="/dashboard" className="inline-flex items-center gap-2 text-zinc-500 hover:text-white mb-8">
                     <ArrowLeft size={20} />

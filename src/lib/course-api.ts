@@ -3,6 +3,13 @@
  * Integrates with golfapi.io or provides mock data for development.
  */
 
+const DEFAULT_HOLE_COUNT = 18;
+const DEFAULT_PAR = 72;
+const MOCK_HOLE_PARS = [4, 5, 3, 4, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4];
+const MOCK_TEMP_BASE_YARDAGE = 400;
+const MOCK_MEMBER_BASE_YARDAGE = 350;
+const YARDAGE_STEP = 10;
+
 export interface CourseSearchResult {
     courseID: string;
     courseName: string;
@@ -32,10 +39,10 @@ export interface CourseDetail {
     tees: TeeData[];
 }
 
-const GOLF_API_KEY = process.env.GOLF_API_KEY;
-const GOLF_API_URL = process.env.GOLF_API_URL || 'https://api.golfapi.io';
-
 export async function searchCourses(query: string): Promise<CourseSearchResult[]> {
+    const GOLF_API_KEY = process.env.GOLF_API_KEY;
+    const GOLF_API_URL = process.env.GOLF_API_URL || 'https://api.golfapi.io';
+
     if (!GOLF_API_KEY) {
         // Mock data for development
         const mocks: CourseSearchResult[] = [
@@ -85,6 +92,9 @@ export async function searchCourses(query: string): Promise<CourseSearchResult[]
 }
 
 export async function getCourseDetails(courseID: string): Promise<CourseDetail | null> {
+    const GOLF_API_KEY = process.env.GOLF_API_KEY;
+    const GOLF_API_URL = process.env.GOLF_API_URL || 'https://api.golfapi.io';
+
     if (!GOLF_API_KEY || courseID.startsWith('mock-')) {
         // Mock details
         return {
@@ -95,26 +105,26 @@ export async function getCourseDetails(courseID: string): Promise<CourseDetail |
             tees: [
                 {
                     name: 'Championship',
-                    par: 72,
+                    par: DEFAULT_PAR,
                     rating: 74.5,
                     slope: 135,
-                    holes: Array.from({ length: 18 }, (_, i) => ({
+                    holes: Array.from({ length: DEFAULT_HOLE_COUNT }, (_, i) => ({
                         holeNumber: i + 1,
-                        par: [4, 5, 3, 4, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4][i],
+                        par: MOCK_HOLE_PARS[i],
                         handicapIndex: i + 1,
-                        yardage: 400 + (i * 10)
+                        yardage: MOCK_TEMP_BASE_YARDAGE + (i * YARDAGE_STEP)
                     }))
                 },
                 {
                     name: 'Member',
-                    par: 72,
+                    par: DEFAULT_PAR,
                     rating: 72.1,
                     slope: 128,
-                    holes: Array.from({ length: 18 }, (_, i) => ({
+                    holes: Array.from({ length: DEFAULT_HOLE_COUNT }, (_, i) => ({
                         holeNumber: i + 1,
-                        par: [4, 5, 3, 4, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4][i],
+                        par: MOCK_HOLE_PARS[i],
                         handicapIndex: i + 1,
-                        yardage: 350 + (i * 10)
+                        yardage: MOCK_MEMBER_BASE_YARDAGE + (i * YARDAGE_STEP)
                     }))
                 }
             ]
@@ -147,10 +157,10 @@ export async function getCourseDetails(courseID: string): Promise<CourseDetail |
         state: data.state,
         tees: (data.tees as ApiTee[] | undefined)?.map((t: ApiTee) => ({
             name: t.teeName,
-            par: t.parMen || 72, // Use men's par as default
+            par: t.parMen || DEFAULT_PAR, // Use men's par as default
             rating: parseFloat(t.courseRatingMen),
             slope: parseInt(t.slopeMen),
-            holes: Array.from({ length: 18 }, (_, i) => ({
+            holes: Array.from({ length: DEFAULT_HOLE_COUNT }, (_, i) => ({
                 holeNumber: i + 1,
                 par: data.parsMen ? data.parsMen[i] : (t.parMen || 4),
                 handicapIndex: data.indexesMen ? data.indexesMen[i] : (i + 1),

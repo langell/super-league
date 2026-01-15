@@ -2,11 +2,15 @@
  * Golf Handicap & Match Play Logic
  */
 
+const STANDARD_SLOPE = 113;
+const MAX_HOLES = 18;
+const WHS_MAX_AVERAGE_COUNT = 8;
+
 /**
  * Calculates the handicap differential for a single round.
  */
 export function calculateDifferential(score: number, rating: number, slope: number): number {
-    return (score - rating) * (113 / slope);
+    return (score - rating) * (STANDARD_SLOPE / slope);
 }
 
 /**
@@ -30,7 +34,7 @@ export function calculateHandicapIndex(differentials: number[], percentage: numb
     else if (numScores <= 16) numToAverage = 5;
     else if (numScores <= 18) numToAverage = 6;
     else if (numScores === 19) numToAverage = 7;
-    else numToAverage = 8;
+    else numToAverage = WHS_MAX_AVERAGE_COUNT;
 
     const bestDifferentials = sorted.slice(0, numToAverage);
     const sum = bestDifferentials.reduce((a, b) => a + b, 0);
@@ -54,8 +58,8 @@ export function calculateMatchStrokes(handicapA: number, handicapB: number): num
  * @returns number of strokes received on this hole (can be > 1 if strokesReceived > 18)
  */
 export function getStrokesForHole(strokesReceived: number, holeStrokeIndex: number): number {
-    const fullCycles = Math.floor(strokesReceived / 18);
-    const extraStrokes = strokesReceived % 18;
+    const fullCycles = Math.floor(strokesReceived / MAX_HOLES);
+    const extraStrokes = strokesReceived % MAX_HOLES;
     return fullCycles + (holeStrokeIndex <= extraStrokes ? 1 : 0);
 }
 

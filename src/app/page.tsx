@@ -2,19 +2,26 @@ import { auth, signIn, signOut } from "@/auth";
 import Link from "next/link";
 import { Trophy, Users, Calendar, Activity, LayoutDashboard, Database, Shield, LogIn, LogOut } from "lucide-react";
 
+const ICON_SIZE_SMALL = 14;
+const ICON_SIZE_LARGE = 40;
+const HERO_BLUR_WIDTH = 1000;
+const HERO_BLUR_HEIGHT = 600;
+const FEATURE_COLS = 3;
+const TECH_STACK_GAP = 12;
+
 export default async function Home() {
   const session = await auth();
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-background text-white">
       {/* Hero Section */}
       <section className="relative py-20 px-6 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-emerald-500/10 blur-[120px] rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-emerald-500/10 blur-[120px] rounded-full" style={{ width: HERO_BLUR_WIDTH, height: HERO_BLUR_HEIGHT }} />
 
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="flex justify-between items-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium">
-              <Activity size={14} />
+              <Activity size={ICON_SIZE_SMALL} />
               API is Live & Running
             </div>
 
@@ -23,14 +30,14 @@ export default async function Home() {
                 <span className="text-zinc-400 text-sm">Signed in as <span className="text-white font-medium">{session.user?.email}</span></span>
                 <form action={async () => { "use server"; await signOut(); }}>
                   <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-lg text-sm transition-all">
-                    <LogOut size={14} /> Sign Out
+                    <LogOut size={ICON_SIZE_SMALL} /> Sign Out
                   </button>
                 </form>
               </div>
             ) : (
               <form action={async () => { "use server"; await signIn("google", { redirectTo: "/dashboard" }); }}>
                 <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-sm transition-all">
-                  <LogIn size={14} /> Sign In
+                  <LogIn size={ICON_SIZE_SMALL} /> Sign In
                 </button>
               </form>
             )}
@@ -71,7 +78,7 @@ export default async function Home() {
       {/* Features Grid */}
       <section className="py-24 px-6 bg-zinc-950/50 border-y border-zinc-900">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className={`grid grid-cols-1 md:grid-cols-${FEATURE_COLS} gap-8`}>
             <FeatureCard
               icon={<Shield className="text-emerald-500" />}
               title="Multitenant Architecture"
@@ -95,21 +102,21 @@ export default async function Home() {
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-16">Powered by a Modern Stack</h2>
-          <div className="flex flex-wrap justify-center gap-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+          <div className={`flex flex-wrap justify-center gap-${TECH_STACK_GAP} opacity-50 grayscale hover:grayscale-0 transition-all duration-500`}>
             <div className="flex flex-col items-center gap-2">
-              <LayoutDashboard size={40} />
+              <LayoutDashboard size={ICON_SIZE_LARGE} />
               <span className="font-medium">Next.js 15</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <Database size={40} />
+              <Database size={ICON_SIZE_LARGE} />
               <span className="font-medium">Drizzle ORM</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <Users size={40} />
+              <Users size={ICON_SIZE_LARGE} />
               <span className="font-medium">PostgreSQL</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <Calendar size={40} />
+              <Calendar size={ICON_SIZE_LARGE} />
               <span className="font-medium">TypeScript</span>
             </div>
           </div>

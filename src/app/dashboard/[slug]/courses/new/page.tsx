@@ -10,7 +10,7 @@ export default async function NewCoursePage({ params }: { params: Promise<{ slug
     await getLeagueAdmin(slug);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white py-20 px-6 font-sans">
+        <div className="min-h-screen bg-background text-white py-20 px-6 font-sans">
             <div className="max-w-2xl mx-auto">
                 <Link href={`/dashboard/${slug}/courses`} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white mb-12 transition-colors">
                     <ArrowLeft size={18} />
@@ -41,7 +41,7 @@ export default async function NewCoursePage({ params }: { params: Promise<{ slug
                             <span className="w-full border-t border-zinc-900 border-dashed"></span>
                         </div>
                         <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest text-zinc-800">
-                            <span className="bg-[#0a0a0a] px-4">Or use traditional search</span>
+                            <span className="bg-background px-4">Or use traditional search</span>
                         </div>
                     </div>
 
@@ -55,7 +55,7 @@ export default async function NewCoursePage({ params }: { params: Promise<{ slug
                             <span className="w-full border-t border-zinc-900"></span>
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-[#0a0a0a] px-4 text-zinc-700 font-bold">Or</span>
+                            <span className="bg-background px-4 text-zinc-700 font-bold">Or</span>
                         </div>
                     </div>
 

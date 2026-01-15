@@ -3,10 +3,11 @@
 import { useActionState, useEffect, useRef } from "react";
 import { addMemberToLeague } from "@/app/actions";
 import { UserPlus } from "lucide-react";
+import { type ActionResponse } from "@/lib/validations";
 
-const initialState = {
+const initialState: ActionResponse = {
+    success: false,
     message: "",
-    errors: {} as Record<string, string[]>,
 };
 
 export function InviteMemberForm({ organizationId, leagueSlug }: { organizationId: string, leagueSlug: string }) {
@@ -14,25 +15,25 @@ export function InviteMemberForm({ organizationId, leagueSlug }: { organizationI
     const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
-        if (state.message === "success") {
+        if (state.success && state.message === "Member added successfully") {
             formRef.current?.reset();
         }
-    }, [state.message]);
+    }, [state.success, state.message]);
 
     return (
         <form ref={formRef} action={formAction} className="space-y-4">
             <input type="hidden" name="organizationId" value={organizationId} />
             <input type="hidden" name="leagueSlug" value={leagueSlug} />
 
-            {state.message && state.message !== "success" && (
+            {state.message && !state.success && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm font-bold">
                     {state.message}
                 </div>
             )}
 
-            {state.message === "success" && (
+            {state.success && state.message && (
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-xl text-sm font-bold">
-                    Member added successfully!
+                    {state.message}
                 </div>
             )}
 

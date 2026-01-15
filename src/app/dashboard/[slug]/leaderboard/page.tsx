@@ -5,6 +5,14 @@ import { eq, desc, and, inArray } from "drizzle-orm";
 import Image from "next/image";
 import { Trophy, Activity } from "lucide-react";
 
+const HOLES_PER_ROUND = 18;
+const RECENT_ROUNDS_LIMIT = 5;
+const CONTAINER_PADDING_X = 8;
+const CONTAINER_PADDING_Y = 12;
+const LAYOUT_GAP = 12;
+const SECTION_GAP = 6;
+const AVATAR_SIZE = 24;
+
 type PlayerAccumulator = {
     id: string;
     name: string | null;
@@ -45,7 +53,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             inArray(rounds.status, ["in_progress", "completed", "scheduled"])
         )
         .orderBy(desc(rounds.date))
-        .limit(5); // Fetch detailed data for a few rounds, but we'll focus on the top one
+        .limit(RECENT_ROUNDS_LIMIT); // Fetch detailed data for a few rounds, but we'll focus on the top one
 
     // Group by Round
     const roundData = activeRounds[0]?.rounds; // Most recent or active
@@ -89,7 +97,8 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                     teams: new Map(), // teamId -> { players: Map(id -> { scores: {} }) }
                 });
             }
-            const match = matchesMap.get(row.matchId)!;
+            const match = matchesMap.get(row.matchId);
+            if (!match) return;
 
             // Default Team ID if null (Individual match?)
             const teamId = row.teamId || `individual-${row.userId}`;
@@ -100,7 +109,8 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                     players: new Map()
                 });
             }
-            const team = match.teams.get(teamId)!;
+            const team = match.teams.get(teamId);
+            if (!team) return;
 
             if (!team.players.has(row.playerId)) {
                 team.players.set(row.playerId, {
@@ -112,7 +122,10 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             }
 
             if (row.grossScore && row.holeNumber) {
-                team.players.get(row.playerId)!.scores.set(row.holeNumber, row.grossScore);
+                const player = team.players.get(row.playerId);
+                if (player) {
+                    player.scores.set(row.holeNumber, row.grossScore);
+                }
             }
         });
 
@@ -136,7 +149,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             let holesPlayed = 0;
 
             // Iterate 1-18
-            for (let h = 1; h <= 18; h++) {
+            for (let h = 1; h <= HOLES_PER_ROUND; h++) {
                 // Get best score for Team A on this hole
                 const scoresA = Array.from(teamA.players.values()).map(p => p.scores.get(h)).filter((s): s is number => s !== undefined && s > 0);
                 const bestA = scoresA.length > 0 ? Math.min(...scoresA) : null;
@@ -247,7 +260,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             let holesWonA = 0;
             let holesWonB = 0;
 
-            for (let h = 1; h <= 18; h++) {
+            for (let h = 1; h <= HOLES_PER_ROUND; h++) {
                 const scoresA = tA.scores.get(h) || [];
                 const scoresB = tB.scores.get(h) || [];
                 const bestA = scoresA.length > 0 ? Math.min(...scoresA) : null;
@@ -285,12 +298,12 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
     const sortedStandings = Array.from(standingsMap.values()).sort((a, b) => b.points - a.points);
 
     return (
-        <div className="max-w-5xl mx-auto py-12 px-8 text-white">
+        <div className={`max-w-5xl mx-auto py-${CONTAINER_PADDING_Y} px-${CONTAINER_PADDING_X} text-white`}>
             <h1 className="text-4xl font-bold mb-8">Leaderboard</h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-${LAYOUT_GAP}`}>
                 {/* LIVE LEADERBOARD */}
-                <div className="space-y-6">
+                <div className={`space-y-${SECTION_GAP}`}>
                     <div className="flex items-center gap-2 mb-4">
                         <Activity className="text-red-500 animate-pulse" />
                         <h2 className="text-2xl font-bold">Live Scoring</h2>
@@ -319,7 +332,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                                             <div className="flex flex-col gap-2">
                                                 {match.teamA && Array.from(match.teamA.players.values()).map((p) => (
                                                     <div key={p.id} className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-zinc-700 relative overflow-hidden">
+                                                        <div className={`w-${AVATAR_SIZE / 4} h-${AVATAR_SIZE / 4} rounded-full bg-zinc-700 relative overflow-hidden`}>
                                                             {p.image ? <Image src={p.image} alt="" fill /> : null}
                                                         </div>
                                                         <span className="font-bold text-sm">{p.name}</span>
@@ -334,7 +347,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                                             <div className="flex flex-col gap-2 items-end">
                                                 {match.teamB && Array.from(match.teamB.players.values()).map((p) => (
                                                     <div key={p.id} className="flex items-center gap-2 flex-row-reverse">
-                                                        <div className="w-6 h-6 rounded-full bg-zinc-700 relative overflow-hidden">
+                                                        <div className={`w-${AVATAR_SIZE / 4} h-${AVATAR_SIZE / 4} rounded-full bg-zinc-700 relative overflow-hidden`}>
                                                             {p.image ? <Image src={p.image} alt="" fill /> : null}
                                                         </div>
                                                         <span className="font-bold text-sm">{p.name}</span>

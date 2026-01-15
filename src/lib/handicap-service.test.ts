@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { updatePlayerHandicap } from './handicap-service';
 import { db } from '@/db';
@@ -15,7 +14,7 @@ describe('Handicap Service', () => {
             where: vi.fn().mockReturnThis(),
             limit: vi.fn().mockReturnThis(),
             orderBy: vi.fn().mockResolvedValue([]),
-        } as any);
+        } as never);
 
         const result = await updatePlayerHandicap('user-1', 'org-1');
         expect(result).toBeUndefined();
@@ -46,13 +45,13 @@ describe('Handicap Service', () => {
         };
 
         vi.mocked(db.select)
-            .mockReturnValueOnce(selectScoresMock as any)
-            .mockReturnValueOnce(selectLeagueMock as any);
+            .mockReturnValueOnce(selectScoresMock as never)
+            .mockReturnValueOnce(selectLeagueMock as never);
 
         vi.mocked(db.update).mockReturnValue({
             set: vi.fn().mockReturnThis(),
             where: vi.fn().mockResolvedValue({})
-        } as any);
+        } as never);
 
         const result = await updatePlayerHandicap('user-1', 'org-1');
 
@@ -83,13 +82,13 @@ describe('Handicap Service', () => {
         };
 
         vi.mocked(db.select)
-            .mockReturnValueOnce(selectScoresMock as any)
-            .mockReturnValueOnce(selectLeagueMock as any);
+            .mockReturnValueOnce(selectScoresMock as never)
+            .mockReturnValueOnce(selectLeagueMock as never);
 
         vi.mocked(db.update).mockReturnValue({
             set: vi.fn().mockReturnThis(),
             where: vi.fn().mockResolvedValue({})
-        } as any);
+        } as never);
 
         const result = await updatePlayerHandicap('user-1', 'org-1');
 
@@ -105,12 +104,12 @@ describe('Handicap Service', () => {
                 where: vi.fn().mockReturnThis(),
                 limit: vi.fn().mockReturnThis(),
                 orderBy: vi.fn().mockResolvedValue([{ grossScore: 80 }])
-            } as any)
+            } as never)
             .mockReturnValueOnce({
                 from: vi.fn().mockReturnThis(),
                 where: vi.fn().mockReturnThis(),
                 limit: vi.fn().mockResolvedValue([])
-            } as any);
+            } as never);
 
         const result = await updatePlayerHandicap('user-1', 'org-1');
         expect(result).toBeUndefined();
@@ -124,12 +123,12 @@ describe('Handicap Service', () => {
                 where: vi.fn().mockReturnThis(),
                 limit: vi.fn().mockReturnThis(),
                 orderBy: vi.fn().mockResolvedValue([{ grossScore: 80 }]) // Only 1 score
-            } as any)
+            } as never)
             .mockReturnValueOnce({
                 from: vi.fn().mockReturnThis(),
                 where: vi.fn().mockReturnThis(),
                 limit: vi.fn().mockResolvedValue([{ minScoresToCalculate: 3 }])
-            } as any);
+            } as never);
 
         const result = await updatePlayerHandicap('user-1', 'org-1');
         expect(result).toBeUndefined();

@@ -22,7 +22,7 @@ export async function getLeagueAdmin(slug: string) {
         .where(
             and(
                 eq(organizations.slug, slug),
-                eq(leagueMembers.userId, session.user.id!),
+                eq(leagueMembers.userId, session.user.id ?? ""),
                 eq(leagueMembers.role, "admin")
             )
         )

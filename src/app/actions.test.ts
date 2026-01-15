@@ -302,22 +302,23 @@ describe('actions', () => {
 
             // Mock sequence of DB calls inside generateSchedule
             vi.mocked(db.select)
+                .mockReturnValueOnce(createChainMock([{ id: 'org-1', slug: 'test-league' }])) // league lookup
+                .mockReturnValueOnce(createChainMock([{ id: 'season-1', organizationId: 'org-1' }])) // season lookup
                 .mockReturnValueOnce(createChainMock([{ id: 'team-1', name: 'Team 1' }, { id: 'team-2', name: 'Team 2' }])) // teams
-                .mockReturnValueOnce(createChainMock([{ id: 'round-1', date: new Date() }])) // rounds
-                .mockReturnValueOnce(createChainMock([{ userId: 'u-1' }, { userId: 'u-2' }])) // team members 1
-                .mockReturnValueOnce(createChainMock([{ userId: 'u-3' }, { userId: 'u-4' }])); // team members 2
+                .mockReturnValueOnce(createChainMock([{ id: 'round-1', date: new Date(), seasonId: 'season-1' }])) // rounds
+                .mockReturnValueOnce(createChainMock([])) // existing matches check
+                .mockReturnValueOnce(createChainMock([{ userId: 'u-1', handicap: '10' }])) // team 1 members
+                .mockReturnValueOnce(createChainMock([{ userId: 'u-2', handicap: '12' }])); // team 2 members
 
             const formData = new FormData();
             formData.append('seasonId', 'season-1');
             formData.append('leagueSlug', 'test-league');
-            // Add some dates to trigger round generation (not strictly necessary for the redirect but good for coverage)
-            formData.append('startDate', '2024-05-20');
-            formData.append('endDate', '2024-06-20');
-            formData.append('frequencyDay', '1');
 
-            await expect(generateSchedule(formData)).rejects.toThrow('Redirect to /dashboard/test-league/schedule');
-            expect(db.transaction).toHaveBeenCalled();
-            expect(revalidatePath).toHaveBeenCalled();
+            // generateSchedule does not redirect, it only revalidates
+            await generateSchedule(formData);
+
+            expect(db.insert).toHaveBeenCalled(); // Should have inserted matches
+            expect(revalidatePath).toHaveBeenCalledWith('/dashboard/test-league/schedule');
         });
     });
 

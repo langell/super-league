@@ -125,10 +125,16 @@ Navigate to `League → Settings` to configure:
 **Option 2: Manual Entry**
 1. Go to `Courses → Add Course`
 2. Enter course details:
-   - Course Name
-   - City
-   - State
-3. Click **Next**
+   - **Course Name**: Full name of the golf course
+   - **Street Address**: Physical address
+   - **City**: City name
+   - **State**: State abbreviation
+   - **Zip Code**: Postal code
+   - **Phone Number**: Course contact number
+   - **Head Pro Name**: Name of the head golf professional
+   - **Email Address**: Course contact email
+   - **Website URL**: Course website
+3. Click **Create Manual Course**
 
 ### Adding Tees
 

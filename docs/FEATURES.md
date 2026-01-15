@@ -17,6 +17,8 @@
 - [x] **AI Scorecard Scanning** (Scorecard Image -> DB Data)
 - [x] Full CRUD for Courses, Tees, and Holes
 - [x] Course Deletion (Handling dependencies via transactions)
+- [x] **Enhanced Course Information** (Address, Zip, Phone, Email, Website, Pro Name)
+- [x] **Rich Course Display** (Detailed course cards with contact info and links)
 
 ### 4. Team Management
 - [x] Create Teams

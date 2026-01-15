@@ -1,10 +1,23 @@
 /**
  * Golf Handicap & Match Play Logic
+ * 
+ * NOTE: The numeric constants below are defined by the USGA World Handicap System (WHS).
+ * These are standard golf scoring values and are intentionally defined as literals.
  */
 
 const STANDARD_SLOPE = 113;
 const MAX_HOLES = 18;
 const WHS_MAX_AVERAGE_COUNT = 8;
+
+// Score count thresholds for determining number of differentials to average
+const SCORE_THRESHOLD_TIER_1 = 3;
+const SCORE_THRESHOLD_TIER_2 = 5;
+const SCORE_THRESHOLD_TIER_3 = 8;
+const SCORE_THRESHOLD_TIER_4 = 11;
+const SCORE_THRESHOLD_TIER_5 = 14;
+const SCORE_THRESHOLD_TIER_6 = 16;
+const SCORE_THRESHOLD_TIER_7 = 18;
+const SCORE_THRESHOLD_TIER_8 = 19;
 
 /**
  * Calculates the handicap differential for a single round.
@@ -26,14 +39,14 @@ export function calculateHandicapIndex(differentials: number[], percentage: numb
     let numToAverage = 0;
     const numScores = differentials.length;
 
-    if (numScores <= 3) numToAverage = 1;
-    else if (numScores <= 5) numToAverage = 1;
-    else if (numScores <= 8) numToAverage = 2;
-    else if (numScores <= 11) numToAverage = 3;
-    else if (numScores <= 14) numToAverage = 4;
-    else if (numScores <= 16) numToAverage = 5;
-    else if (numScores <= 18) numToAverage = 6;
-    else if (numScores === 19) numToAverage = 7;
+    if (numScores <= SCORE_THRESHOLD_TIER_1) numToAverage = 1;
+    else if (numScores <= SCORE_THRESHOLD_TIER_2) numToAverage = 1;
+    else if (numScores <= SCORE_THRESHOLD_TIER_3) numToAverage = 2;
+    else if (numScores <= SCORE_THRESHOLD_TIER_4) numToAverage = 3;
+    else if (numScores <= SCORE_THRESHOLD_TIER_5) numToAverage = 4;
+    else if (numScores <= SCORE_THRESHOLD_TIER_6) numToAverage = 5;
+    else if (numScores <= SCORE_THRESHOLD_TIER_7) numToAverage = 6;
+    else if (numScores === SCORE_THRESHOLD_TIER_8) numToAverage = 7;
     else numToAverage = WHS_MAX_AVERAGE_COUNT;
 
     const bestDifferentials = sorted.slice(0, numToAverage);

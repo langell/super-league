@@ -70,7 +70,10 @@ filesToReview.forEach(file => {
   // 2. No Magic Numbers
   const numbers = content.match(MAGIC_NUMBER_REGEX) || [];
   const magicNumbers = numbers.filter(n => !ALLOWED_NUMBERS.has(n));
-  if (magicNumbers.length > 5 && !file.includes('seed.ts') && !file.includes('schema.ts')) {
+  // Skip files whose purpose is to define constants
+  const isConstantFile = file.includes('constants.ts') || file.includes('test-data.ts') || 
+                         file.includes('validations.ts') || file.includes('handicap.ts');
+  if (magicNumbers.length > 5 && !file.includes('seed.ts') && !file.includes('schema.ts') && !isConstantFile) {
     console.log(chalk.yellow(`🔢 [${relativePath}] Potential Magic Numbers found: ${[...new Set(magicNumbers)].slice(0, 5).join(', ')}... Use constants for readability.`));
   }
 

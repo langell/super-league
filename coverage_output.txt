@@ -1,0 +1,57 @@
+
+> golf-league@0.1.0 test:coverage
+> vitest run --coverage
+
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90m/Users/lonnyangell/dev/golf-league[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/lib/handicap.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/course-api.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/logger.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/validations.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/handicap-service.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/auth-utils.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstderr[2m | src/app/api/scores/scores.test.ts[2m > [22m[2mScores API[2m > [22m[2mPOST[2m > [22m[2mreturns 500 on server error
+[22m[39mError: DB Error
+    at Object.<anonymous> [90m(/Users/lonnyangell/dev/golf-league/[39msrc/app/api/scores/scores.test.ts:98:71[90m)[39m
+    at Object.Mock [as select] [90m(file:///Users/lonnyangell/dev/golf-league/[39mnode_modules/[4m@vitest[24m/spy/dist/index.js:285:34[90m)[39m
+    at Module.POST [90m(/Users/lonnyangell/dev/golf-league/[39msrc/app/api/scores/route.ts:16:14[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at [90m/Users/lonnyangell/dev/golf-league/[39msrc/app/api/scores/scores.test.ts:105:30
+    at [90mfile:///Users/lonnyangell/dev/golf-league/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+ [32m✓[39m src/app/api/leagues/leagues.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/app/api/scores/scores.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/app/actions.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m64 passed[39m[22m[90m (64)[39m
+[2m   Start at [22m 05:49:01
+[2m   Duration [22m 468ms[2m (transform 610ms, setup 806ms, import 957ms, tests 69ms, environment 1ms)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   66.46 |    51.37 |   79.68 |   70.62 |                   
+ app               |   58.49 |    42.15 |   69.04 |   63.93 |                   
+  actions.ts       |   58.49 |    42.15 |   69.04 |   63.93 | ...-999,1019,1041 
+ .../[...nextauth] |       0 |      100 |     100 |       0 |                   
+  route.ts         |       0 |      100 |     100 |       0 | 2                 
+ app/api/leagues   |      75 |       75 |     100 |      75 |                   
+  route.ts         |      75 |       75 |     100 |      75 | 19,29-30          
+ app/api/scores    |      90 |    76.47 |     100 |      90 |                   
+  route.ts         |      90 |    76.47 |     100 |      90 | 40,65             
+ lib               |   99.09 |    82.43 |     100 |     100 |                   
+  auth-utils.ts    |     100 |    83.33 |     100 |     100 | 25                
+  course-api.ts    |   97.05 |    68.75 |     100 |     100 | 63,102,158-166    
+  ...ap-service.ts |     100 |    88.88 |     100 |     100 | 46                
+  handicap.ts      |     100 |      100 |     100 |     100 |                   
+  logger.ts        |     100 |       75 |     100 |     100 | 12                
+  validations.ts   |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
+ERROR: Coverage for lines (70.62%) does not meet global threshold (80%)
+ERROR: Coverage for functions (79.68%) does not meet global threshold (80%)
+ERROR: Coverage for statements (66.46%) does not meet global threshold (80%)
+ERROR: Coverage for branches (51.37%) does not meet global threshold (80%)

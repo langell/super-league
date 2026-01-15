@@ -238,9 +238,8 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             if (row.grossScore) team.scores.get(row.holeNumber).push(row.grossScore);
         });
 
-        // Calculate Results
         seasonalMatchesMap.forEach(m => {
-            const teamsArr = Array.from(m.teams.values());
+            const teamsArr = Array.from(m.teams.values()) as { id: string, scores: Map<number, number[]> }[];
             if (teamsArr.length !== 2) return;
 
             const tA = teamsArr[0];
@@ -316,10 +315,9 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                                     </div>
 
                                     <div className="flex justify-between items-center mt-4">
-                                        {/* Team A */}
                                         <div className="flex-1">
                                             <div className="flex flex-col gap-2">
-                                                {Array.from(match.teamA.players.values()).map((p) => (
+                                                {match.teamA && Array.from(match.teamA.players.values()).map((p) => (
                                                     <div key={p.id} className="flex items-center gap-2">
                                                         <div className="w-6 h-6 rounded-full bg-zinc-700 relative overflow-hidden">
                                                             {p.image ? <Image src={p.image} alt="" fill /> : null}
@@ -332,10 +330,9 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
 
                                         <div className="px-4 text-xs font-bold text-zinc-500">VS</div>
 
-                                        {/* Team B */}
                                         <div className="flex-1 text-right">
                                             <div className="flex flex-col gap-2 items-end">
-                                                {Array.from(match.teamB.players.values()).map((p) => (
+                                                {match.teamB && Array.from(match.teamB.players.values()).map((p) => (
                                                     <div key={p.id} className="flex items-center gap-2 flex-row-reverse">
                                                         <div className="w-6 h-6 rounded-full bg-zinc-700 relative overflow-hidden">
                                                             {p.image ? <Image src={p.image} alt="" fill /> : null}

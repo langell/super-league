@@ -189,7 +189,7 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
         });
 
         seasonalMatchesMap.forEach(m => {
-            const teamsArr = Array.from(m.teams.values());
+            const teamsArr = Array.from(m.teams.values()) as { id: string, scores: Map<number, number[]> }[];
             if (teamsArr.length !== 2) return;
             const tA = teamsArr[0];
             const tB = teamsArr[1];

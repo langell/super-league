@@ -1132,6 +1132,23 @@ export async function saveScorecard(formData: FormData) {
     const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
     if (!match) throw new Error("Match not found");
 
+    // Get the match to find the organization
+    const [round] = await db
+        .select({ seasonId: rounds.seasonId })
+        .from(rounds)
+        .where(eq(rounds.id, match.roundId))
+        .limit(1);
+
+    if (!round) throw new Error("Round not found");
+
+    const [seasonInfo] = await db
+        .select({ organizationId: seasons.organizationId })
+        .from(seasons)
+        .where(eq(seasons.id, round.seasonId))
+        .limit(1);
+
+    if (!seasonInfo) throw new Error("Season not found");
+
     // 2. Iterate through formData keys
     // We'll process them in a loop or collect and batched insert
     const updates: { matchPlayerId: string; holeId: string; grossScore: number }[] = [];
@@ -1170,6 +1187,8 @@ export async function saveScorecard(formData: FormData) {
     // Let's use individual deletes/inserts for absolute safety for now or find/update.
 
     // Better: Filter valid updates
+    const playerIds = new Set<string>();
+
     if (updates.length > 0) {
         // Warning: This loop is N+1 DB calls if not careful.
         // For a scorecard, 18 holes * 4 players = 72 queries. Not great but acceptable for MVP.
@@ -1192,10 +1211,32 @@ export async function saveScorecard(formData: FormData) {
                     updatedBy: session.user?.id
                 });
             }
+
+            // Get all unique players from this match to recalculate handicaps
+            const playersInMatch = await tx
+                .select({ userId: matchPlayers.userId })
+                .from(matchPlayers)
+                .where(eq(matchPlayers.matchId, matchId));
+
+            playersInMatch.forEach(p => playerIds.add(p.userId));
         });
+
+        // 4. Auto-update handicaps for all players in this match
+        const { updatePlayerHandicap } = await import("@/lib/handicap-service");
+
+        for (const userId of playerIds) {
+            try {
+                await updatePlayerHandicap(userId, seasonInfo.organizationId);
+                logger.info({ userId, matchId }, "Handicap auto-updated after scorecard save");
+            } catch (error) {
+                // Don't fail the whole save if handicap update fails
+                logger.error({ error, userId, matchId }, "Failed to auto-update handicap");
+            }
+        }
     }
 
     revalidatePath(`/dashboard/${leagueSlug}/scorecard/${matchId}`);
+    revalidatePath(`/dashboard/${leagueSlug}/leaderboard`);
 }
 
 export async function setupMatch(formData: FormData) {
@@ -1236,3 +1277,65 @@ export async function setupMatch(formData: FormData) {
     // Redirect to scorecard after setup
     redirect(`/dashboard/${leagueSlug}/scorecard/${matchId}`);
 }
+
+/**
+ * Manually recalculate handicaps for all members in a league.
+ * Only accessible to league admins.
+ */
+export async function recalculateLeagueHandicaps(formData: FormData) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const leagueSlug = formData.get("leagueSlug") as string;
+    const organizationId = formData.get("organizationId") as string;
+
+    // 1. Verify caller is admin
+    const [membership] = await db
+        .select()
+        .from(leagueMembers)
+        .where(
+            and(
+                eq(leagueMembers.organizationId, organizationId),
+                eq(leagueMembers.userId, session.user.id ?? ""),
+                eq(leagueMembers.role, "admin")
+            )
+        )
+        .limit(1);
+
+    if (!membership) throw new Error("Unauthorized - Not an Admin");
+
+    // 2. Get all members of the league
+    const members = await db
+        .select({ userId: leagueMembers.userId })
+        .from(leagueMembers)
+        .where(eq(leagueMembers.organizationId, organizationId));
+
+    // 3. Recalculate handicap for each member
+    const { updatePlayerHandicap } = await import("@/lib/handicap-service");
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const member of members) {
+        try {
+            await updatePlayerHandicap(member.userId, organizationId);
+            successCount++;
+            logger.info({ userId: member.userId, organizationId }, "Handicap recalculated");
+        } catch (error) {
+            errorCount++;
+            logger.error({ error, userId: member.userId, organizationId }, "Failed to recalculate handicap");
+        }
+    }
+
+    logger.info({
+        organizationId,
+        totalMembers: members.length,
+        successCount,
+        errorCount
+    }, "Bulk handicap recalculation completed");
+
+    revalidatePath(`/dashboard/${leagueSlug}/members`);
+    revalidatePath(`/dashboard/${leagueSlug}/leaderboard`);
+    redirect(`/dashboard/${leagueSlug}/members`);
+}
+

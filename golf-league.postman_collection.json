@@ -1,0 +1,880 @@
+{
+    "info": {
+        "_postman_id": "7d9e8400-e29b-41d4-a716-446655440000",
+        "name": "Golf League Exhaustive API",
+        "description": "Exhaustive API collection for the Golf League Manager, covering all REST endpoints and Server Actions.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Get Session",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/session",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "session"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Logged In",
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"user\": {\n        \"name\": \"John Doe\",\n        \"email\": \"john@example.com\",\n        \"image\": \"https://lh3.googleusercontent.com/a/abc\",\n        \"id\": \"user-123\"\n    },\n    \"expires\": \"2024-04-20T10:00:00.000Z\"\n}"
+                        },
+                        {
+                            "name": "Not Logged In",
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{}"
+                        },
+                        {
+                            "name": "Error (Server Error)",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"error\": \"Internal Server Error\"\n}"
+                        },
+                        {
+                            "name": "Error (Service Unavailable)",
+                            "status": "Service Unavailable",
+                            "code": 503,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"message\": \"Database connection failed\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get CSRF Token",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/csrf",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "csrf"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"csrfToken\": \"a1b2c3d4e5f6g7h8i9j0\"\n}"
+                        },
+                        {
+                            "name": "Token Expired (Rotate)",
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"csrfToken\": \"new_session_token_xyz\"\n}"
+                        },
+                        {
+                            "name": "Forbidden",
+                            "status": "Forbidden",
+                            "code": 403,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"error\": \"Forbidden\"\n}"
+                        },
+                        {
+                            "name": "Not Modified",
+                            "status": "Not Modified",
+                            "code": 304,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": null
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Leagues",
+            "item": [
+                {
+                    "name": "List Leagues (API)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/leagues",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "leagues"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success (Leagues Found)",
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "[\n    {\n        \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n        \"name\": \"Monday Night Men's\",\n        \"slug\": \"monday-night-mens\",\n        \"handicapPercentage\": \"0.90\",\n        \"minScoresToCalculate\": 3\n    }\n]"
+                        },
+                        {
+                            "name": "Success (Empty)",
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "[]"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"error\": \"Unauthorized\"\n}"
+                        },
+                        {
+                            "name": "Server Error",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"error\": \"Failed to fetch leagues\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Create League (API)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Saturday Morning Scramble\",\n    \"slug\": \"saturday-scramble\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/leagues",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "leagues"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"id\": \"550e8400-e29b-41d4-a716-446655440003\",\n    \"name\": \"Saturday Morning Scramble\",\n    \"slug\": \"saturday-scramble\"\n}"
+                        },
+                        {
+                            "name": "Validation Error",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"error\": \"Name and slug are required\"\n}"
+                        },
+                        {
+                            "name": "Conflict (Duplicate Slug)",
+                            "status": "Conflict",
+                            "code": 409,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"error\": \"League with this slug already exists\"\n}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "_postman_previewlanguage": "json",
+                            "header": [],
+                            "cookie": [],
+                            "body": "{\n    \"error\": \"Unauthorized\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Update League Settings (Action)",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "leagueId",
+                                    "value": "uuid-123",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "name",
+                                    "value": "New Name",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "slug",
+                                    "value": "new-slug",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "handicapPercentage",
+                                    "value": "0.95",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "minScoresToCalculate",
+                                    "value": "5",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/updateLeagueSettings",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "updateLeagueSettings"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true}"
+                        },
+                        {
+                            "name": "Validation Error",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"success\": false, \"message\": \"Invalid input\"}"
+                        },
+                        {
+                            "name": "Unauthorized (Not Admin)",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"success\": false, \"message\": \"Unauthorized\"}"
+                        },
+                        {
+                            "name": "Internal Error",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "body": "{\"success\": false, \"message\": \"Failed to update\"}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Courses",
+            "item": [
+                {
+                    "name": "Create Course (Action)",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "leagueSlug",
+                                    "value": "my-league",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "name",
+                                    "value": "Pebble Beach",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "city",
+                                    "value": "Monterey",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "state",
+                                    "value": "CA",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/createCourse",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "createCourse"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true}"
+                        },
+                        {
+                            "name": "Validation Error",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"error\": \"Name is required\"}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"error\": \"Unauthorized\"}"
+                        },
+                        {
+                            "name": "Server Error",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "body": "{\"error\": \"Database error\"}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Scan Scorecard (AI Action)",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "scorecard",
+                                    "type": "file",
+                                    "src": "/path/to/image.jpg"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/scanScorecardAction",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "scanScorecardAction"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"name\": \"Course\", \"tees\": [...]}"
+                        },
+                        {
+                            "name": "AI Parsing Error",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "body": "{\"error\": \"Failed to extract data\"}"
+                        },
+                        {
+                            "name": "No Image Provided",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"error\": \"No image provided\"}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"error\": \"Unauthorized\"}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Seasons",
+            "item": [
+                {
+                    "name": "Create Season (Action)",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "organizationId",
+                                    "value": "uuid-123",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "leagueSlug",
+                                    "value": "my-league",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "name",
+                                    "value": "Spring 2024",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2024-03-01",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2024-06-01",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "frequencyDay",
+                                    "value": "1",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/createSeason",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "createSeason"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true}"
+                        },
+                        {
+                            "name": "Missing Name",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"error\": \"Name is required\"}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"error\": \"Unauthorized\"}"
+                        },
+                        {
+                            "name": "Invalid Date",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"error\": \"Invalid start date\"}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Rounds",
+            "item": [
+                {
+                    "name": "Generate Schedule (Action)",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "leagueSlug",
+                                    "value": "my-league",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "seasonId",
+                                    "value": "uuid-456",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/generateSchedule",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "generateSchedule"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true}"
+                        },
+                        {
+                            "name": "No Teams",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true, \"message\": \"Not enough teams to generate\"}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"error\": \"Unauthorized\"}"
+                        },
+                        {
+                            "name": "Season Not Found",
+                            "status": "NotFound",
+                            "code": 404,
+                            "body": "{\"error\": \"Invalid league or season\"}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Matches",
+            "item": [
+                {
+                    "name": "Setup Match (Action)",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "leagueSlug",
+                                    "value": "my-league",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "matchId",
+                                    "value": "uuid-789",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "player-uuid1-tee",
+                                    "value": "tee-uuid-1",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "player-uuid2-tee",
+                                    "value": "tee-uuid-2",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/setupMatch",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "setupMatch"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true}"
+                        },
+                        {
+                            "name": "Partial Success (Invalid Tee ID)",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"error\": \"Unauthorized\"}"
+                        },
+                        {
+                            "name": "Internal Error",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "body": "{\"error\": \"Database failure\"}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Members",
+            "item": [
+                {
+                    "name": "Add Member (Action)",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "organizationId",
+                                    "value": "uuid-123",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "leagueSlug",
+                                    "value": "my-league",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "email",
+                                    "value": "player@example.com",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "name",
+                                    "value": "New Player",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "role",
+                                    "value": "player",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/addMemberToLeague",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "addMemberToLeague"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true, \"message\": \"Member added successfully\"}"
+                        },
+                        {
+                            "name": "Already Member",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true, \"message\": \"User is already a member\"}"
+                        },
+                        {
+                            "name": "Validation Error",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"success\": false, \"message\": \"Validation failed\"}"
+                        },
+                        {
+                            "name": "Unauthorized (Not Admin)",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"success\": false, \"message\": \"Unauthorized\"}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Scores",
+            "item": [
+                {
+                    "name": "Record Score (API)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"matchPlayerId\": \"uuid-player-1\",\n    \"holeId\": \"uuid-hole-1\",\n    \"grossScore\": 4,\n    \"organizationId\": \"uuid-org-1\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/scores",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "scores"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success (New Score)",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"id\": \"uuid-score\", \"grossScore\": 4}"
+                        },
+                        {
+                            "name": "Success (Admin Override)",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"id\": \"uuid-score\", \"scoreOverride\": 3}"
+                        },
+                        {
+                            "name": "Validation Error (Illegal Score)",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"error\": \"Score must be between 1 and 20\"}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"error\": \"Unauthorized\"}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Save Entire Scorecard (Action)",
+                    "request": {
+                        "method": "POST",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "matchId",
+                                    "value": "uuid-match-1",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "leagueSlug",
+                                    "value": "my-league",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "player-uuidA-hole-1",
+                                    "value": "4",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "player-uuidA-hole-2",
+                                    "value": "5",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/actions/saveScorecard",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "actions",
+                                "saveScorecard"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\"success\": true}"
+                        },
+                        {
+                            "name": "Unauthorized",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\"error\": \"Unauthorized\"}"
+                        },
+                        {
+                            "name": "Match Not Found",
+                            "status": "NotFound",
+                            "code": 404,
+                            "body": "{\"error\": \"Match not found\"}"
+                        },
+                        {
+                            "name": "Validation Error (Partial Data)",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\"error\": \"Missing data\"}"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000",
+            "type": "string"
+        }
+    ]
+}

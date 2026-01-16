@@ -38,24 +38,23 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
-// Robust mock for Drizzle's chained select
 const createChainMock = (result: unknown[]) => {
     const mockChain = {
-        then: <T>(onFulfilled: (value: unknown[]) => T | PromiseLike<T>) => Promise.resolve(result).then(onFulfilled),
-        catch: <T>(onRejected: (reason: unknown) => T | PromiseLike<T>) => Promise.resolve(result).catch(onRejected),
-        limit: vi.fn(() => mockChain),
-        where: vi.fn(() => mockChain),
-        from: vi.fn(() => mockChain),
-        innerJoin: vi.fn(() => mockChain),
-        orderBy: vi.fn(() => mockChain),
-        leftJoin: vi.fn(() => mockChain),
-        fields: {},
-        session: {},
-        dialect: {},
-        withList: [],
-        distinct: vi.fn(() => mockChain),
+        then: (onFulfilled: (value: unknown[]) => unknown) => Promise.resolve(result).then(onFulfilled),
+        catch: (onRejected: (reason: unknown) => unknown) => Promise.resolve(result).catch(onRejected),
+        limit: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        innerJoin: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        leftJoin: vi.fn().mockReturnThis(),
+        fields: undefined,
+        session: undefined,
+        dialect: undefined,
+        withList: undefined,
+        distinct: vi.fn().mockReturnThis(),
     };
-    return mockChain;
+    return mockChain as never;
 };
 
 // Shared mocks for transaction calls
@@ -275,8 +274,8 @@ describe('actions', () => {
 
         it('creates a round successfully', async () => {
             const formData = new FormData();
-            formData.append('seasonId', 'season-1');
-            formData.append('courseId', 'course-1');
+            formData.append('seasonId', '550e8400-e29b-41d4-a716-446655440000');
+            formData.append('courseId', '550e8400-e29b-41d4-a716-446655440001');
             formData.append('date', '2024-05-20');
             formData.append('leagueSlug', 'test-league');
 
@@ -287,9 +286,12 @@ describe('actions', () => {
 
         it('updates a round successfully', async () => {
             const formData = new FormData();
-            formData.append('roundId', 'round-1');
+            formData.append('roundId', '550e8400-e29b-41d4-a716-446655440002');
+            formData.append('seasonId', '550e8400-e29b-41d4-a716-446655440000');
+            formData.append('courseId', '550e8400-e29b-41d4-a716-446655440001');
             formData.append('date', '2024-05-21');
             formData.append('leagueSlug', 'test-league');
+            formData.append('status', 'scheduled');
 
             await expect(updateRound(formData)).rejects.toThrow('Redirect to /dashboard/test-league/schedule');
             expect(db.update).toHaveBeenCalled();
@@ -504,17 +506,30 @@ describe('actions', () => {
         });
     });
 
-    describe('League Settings', () => {
-        it('updates league settings successfully', async () => {
+    describe('League Management', () => {
+        beforeEach(() => {
             vi.mocked(auth).mockResolvedValue({ user: { id: 'admin-1' } } as never);
-            vi.mocked(db.select).mockReturnValueOnce(createChainMock([{ userId: 'admin-1', role: 'admin' }]));
+        });
+
+        it('creates a league successfully', async () => {
+            const formData = new FormData();
+            formData.append('name', 'Test League');
+            formData.append('slug', 'test-league');
+
+            await expect(createLeague(formData)).rejects.toThrow('Redirect to /dashboard');
+            expect(db.insert).toHaveBeenCalled();
+            expect(revalidatePath).toHaveBeenCalled();
+        });
+
+        it('updates league settings successfully', async () => {
+            vi.mocked(db.select).mockReturnValueOnce(createChainMock([{ id: 'membership-1', role: 'admin' }]) as never);
 
             const formData = new FormData();
-            formData.append('leagueId', 'org-1');
+            formData.append('leagueId', '550e8400-e29b-41d4-a716-446655440003');
             formData.append('name', 'Updated League');
             formData.append('slug', 'updated-league');
-            formData.append('handicapPercentage', '90');
-            formData.append('minScoresToCalculate', '5');
+            formData.append('handicapPercentage', '0.8');
+            formData.append('minScoresToCalculate', '3');
 
             await expect(updateLeagueSettings(formData)).rejects.toThrow('Redirect to /dashboard/updated-league');
             expect(db.update).toHaveBeenCalled();

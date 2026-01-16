@@ -17,6 +17,11 @@ vi.mock('@/lib/handicap-service', () => ({
     updatePlayerHandicap: vi.fn(),
 }));
 
+// Mock auth-utils
+vi.mock('@/lib/auth-utils', () => ({
+    validateMemberRole: vi.fn(),
+}));
+
 // Helper for chained select
 const createSelectMock = (result: unknown[]) => {
     const limit = vi.fn().mockResolvedValue(result);
@@ -36,12 +41,16 @@ describe('Scores API', () => {
             holeId: 'hole-1',
             grossScore: 4,
             organizationId: 'org-1',
-            userId: 'user-1',
-            isAdmin: false,
         };
 
         it('saves a new score successfully', async () => {
             vi.mocked(db.select).mockReturnValueOnce(createSelectMock([]) as never);
+            const mockValidate = await import('@/lib/auth-utils');
+            vi.mocked(mockValidate.validateMemberRole).mockResolvedValueOnce({
+                session: { user: { id: 'user-1' } },
+                membership: { role: 'player' }
+            } as never);
+
             vi.mocked(db.insert).mockReturnValueOnce({
                 values: vi.fn().mockReturnValueOnce({
                     returning: vi.fn().mockResolvedValueOnce([{ id: 'score-1' }])
@@ -63,6 +72,12 @@ describe('Scores API', () => {
 
         it('updates an existing score successfully', async () => {
             vi.mocked(db.select).mockReturnValueOnce(createSelectMock([{ id: 'existing-1' }]) as never);
+            const mockValidate = await import('@/lib/auth-utils');
+            vi.mocked(mockValidate.validateMemberRole).mockResolvedValueOnce({
+                session: { user: { id: 'user-1' } },
+                membership: { role: 'player' }
+            } as never);
+
             vi.mocked(db.update).mockReturnValueOnce({
                 set: vi.fn().mockReturnValueOnce({
                     where: vi.fn().mockReturnValueOnce({
@@ -95,6 +110,12 @@ describe('Scores API', () => {
         });
 
         it('returns 500 on server error', async () => {
+            const mockValidate = await import('@/lib/auth-utils');
+            vi.mocked(mockValidate.validateMemberRole).mockResolvedValueOnce({
+                session: { user: { id: 'user-1' } },
+                membership: { role: 'player' }
+            } as never);
+
             vi.mocked(db.select).mockImplementationOnce(() => { throw new Error('DB Error'); });
 
             const req = new Request('http://localhost/api/scores', {

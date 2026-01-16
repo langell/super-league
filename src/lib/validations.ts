@@ -8,6 +8,10 @@ const HANDICAP_MIN = -10;
 const HANDICAP_MAX = 54;
 const SCORE_MIN = 1;
 const SCORE_MAX = 20;
+const NOTIFICATION_PREFERENCES = ["sms", "email", "none"] as const;
+
+export const notificationPreferenceSchema = z.enum(NOTIFICATION_PREFERENCES);
+export type NotificationPreference = z.infer<typeof notificationPreferenceSchema>;
 
 /**
  * Common validation schemas for the Golf League API.
@@ -20,6 +24,28 @@ const SCORE_MAX = 20;
 // League & slug validation
 export const slugSchema = z.string().min(SLUG_MIN_LENGTH).max(SLUG_MAX_LENGTH).regex(/^[a-z0-9-]+$/, "Slugs can only contain lowercase letters, numbers, and hyphens");
 
+export const leagueSchema = z.object({
+    name: z.string().min(NAME_MIN_LENGTH).max(NAME_MAX_LENGTH),
+    slug: slugSchema,
+    handicapPercentage: z.string().optional(),
+    minScoresToCalculate: z.number().int().min(1).max(20).optional().default(3),
+});
+
+// Season validation
+export const seasonSchema = z.object({
+    name: z.string().min(NAME_MIN_LENGTH).max(NAME_MAX_LENGTH),
+    active: z.boolean().default(true),
+});
+
+// Round validation
+export const roundSchema = z.object({
+    seasonId: z.string().uuid(),
+    courseId: z.string().uuid(),
+    date: z.string().or(z.date()),
+    holesCount: z.number().int().min(9).max(18).default(18),
+    roundType: z.enum(["9_holes", "18_holes"]).default("18_holes"),
+});
+
 // Member validation
 export const memberSchema = z.object({
     firstName: z.string().min(NAME_MIN_LENGTH, "First name is required").max(NAME_MAX_LENGTH),
@@ -27,12 +53,12 @@ export const memberSchema = z.object({
     email: z.string().email("Invalid email address"),
     handicap: z.number().min(HANDICAP_MIN).max(HANDICAP_MAX).optional().default(0),
     role: z.enum(["admin", "player", "sub"]).default("player"),
+    notificationPreference: notificationPreferenceSchema.default("sms"),
 });
 
 // Scoring validation
 export const scoreSchema = z.object({
-    matchId: z.string().uuid(),
-    playerId: z.string().uuid(),
+    matchPlayerId: z.string().uuid(),
     holeId: z.string().uuid(),
     grossScore: z.number().int().min(SCORE_MIN).max(SCORE_MAX),
 });

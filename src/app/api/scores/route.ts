@@ -3,14 +3,34 @@ import { scores } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { updatePlayerHandicap } from "@/lib/handicap-service";
+import { validateMemberRole } from "@/lib/auth-utils";
 
 export async function POST(req: Request) {
     try {
-        const { matchPlayerId, holeId, grossScore, organizationId, userId, isAdmin } = await req.json();
+        const { matchPlayerId, holeId, grossScore, organizationId } = await req.json();
 
-        if (!matchPlayerId || !holeId || grossScore === undefined) {
+        if (!matchPlayerId || !holeId || grossScore === undefined || !organizationId) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
+
+        // --- SECURITY FIX ---
+        // Validate session and get role from DB, NOT from request body
+        let session, membership;
+        try {
+            // Allow both admin and player, but we'll check the role for override permissions
+            const result = await validateMemberRole(organizationId, ["admin", "player"]);
+            session = result.session;
+            membership = result.membership;
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unauthorized";
+            return NextResponse.json({ error: message }, { status: 401 });
+        }
+
+        const userId = session.user.id;
+        if (!userId) {
+            return NextResponse.json({ error: "User ID not found in session" }, { status: 401 });
+        }
+        const isAdmin = membership.role === "admin";
 
         const existingScore = await db
             .select()
@@ -58,7 +78,7 @@ export async function POST(req: Request) {
                 matchPlayerId,
                 holeId,
                 updatedBy: userId,
-                grossScore: isAdmin ? grossScore : grossScore,
+                grossScore: grossScore, // Always set grossScore
             };
 
             if (isAdmin) {
@@ -68,9 +88,9 @@ export async function POST(req: Request) {
             result = await db.insert(scores).values(insertData).returning();
         }
 
-        // 4. Trigger handicap update asynchronously (optional based on requirements)
-        // For this API, we'll do it synchronously for immediate feedback
-        if (organizationId && userId) {
+        // 4. Trigger handicap update asynchronously
+        if (organizationId) {
+            // Use the verified userId from session
             await updatePlayerHandicap(userId, organizationId);
         }
 

@@ -6,77 +6,103 @@ import { eq, asc } from "drizzle-orm";
 import { rounds, organizations, seasons, teams, matches, leagueMembers, teamMembers, matchPlayers } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { roundSchema } from "@/lib/validations";
+
+const LEAGUE_SLUG_KEY = "leagueSlug";
+const getSchedulePath = (slug: string) => `/dashboard/${slug}/schedule`;
 
 export async function createRound(formData: FormData) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const leagueSlug = formData.get("leagueSlug") as string;
-    const seasonId = formData.get("seasonId") as string;
-    const courseId = formData.get("courseId") as string;
-    const dateStr = formData.get("date") as string;
-    const holesCount = parseInt(formData.get("holesCount") as string) || 18;
-    const roundType = formData.get("roundType") as string || "18_holes";
+    const leagueSlug = formData.get(LEAGUE_SLUG_KEY) as string;
 
-    if (!courseId || !dateStr) throw new Error("Missing fields");
+    const rawData = {
+        seasonId: formData.get("seasonId"),
+        courseId: formData.get("courseId"),
+        date: formData.get("date"),
+        holesCount: parseInt(formData.get("holesCount") as string) || 18,
+        roundType: formData.get("roundType") || "18_holes",
+    };
+
+    const validated = roundSchema.safeParse(rawData);
+    if (!validated.success) {
+        throw new Error("Invalid input: " + JSON.stringify(validated.error.flatten().fieldErrors));
+    }
+
+    const { seasonId, courseId, date, holesCount, roundType } = validated.data;
 
     await db.insert(rounds).values({
         seasonId,
         courseId,
-        date: new Date(dateStr),
+        date: new Date(date),
         status: "scheduled",
         holesCount,
         roundType
     });
 
-    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
-    redirect(`/dashboard/${leagueSlug}/schedule`);
+    const schedulePath = getSchedulePath(leagueSlug);
+    revalidatePath(schedulePath);
+    redirect(schedulePath);
 }
 
 export async function updateRound(formData: FormData) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const leagueSlug = formData.get("leagueSlug") as string;
+    const leagueSlug = formData.get(LEAGUE_SLUG_KEY) as string;
     const roundId = formData.get("roundId") as string;
-    const courseId = formData.get("courseId") as string || null;
-    const dateStr = formData.get("date") as string;
     const status = formData.get("status") as string;
-    const holesCount = parseInt(formData.get("holesCount") as string) || 18;
-    const roundType = formData.get("roundType") as string || "18_holes";
+
+    const rawData = {
+        seasonId: formData.get("seasonId"), // We might need this for validation or context
+        courseId: formData.get("courseId"),
+        date: formData.get("date"),
+        holesCount: parseInt(formData.get("holesCount") as string) || 18,
+        roundType: formData.get("roundType") || "18_holes",
+    };
+
+    const validated = roundSchema.safeParse(rawData);
+    if (!validated.success) {
+        throw new Error("Invalid input: " + JSON.stringify(validated.error.flatten().fieldErrors));
+    }
+
+    const { courseId, date, holesCount, roundType } = validated.data;
 
     await db.update(rounds)
         .set({
-            courseId: courseId || null,
-            date: new Date(dateStr),
+            courseId,
+            date: new Date(date),
             status,
             holesCount,
             roundType,
         })
         .where(eq(rounds.id, roundId));
 
-    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
-    redirect(`/dashboard/${leagueSlug}/schedule`);
+    const schedulePath = getSchedulePath(leagueSlug);
+    revalidatePath(schedulePath);
+    redirect(schedulePath);
 }
 
 export async function deleteRound(formData: FormData) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const leagueSlug = formData.get("leagueSlug") as string;
+    const leagueSlug = formData.get(LEAGUE_SLUG_KEY) as string;
     const roundId = formData.get("roundId") as string;
 
     await db.delete(rounds).where(eq(rounds.id, roundId));
 
-    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
-    redirect(`/dashboard/${leagueSlug}/schedule`);
+    const schedulePath = getSchedulePath(leagueSlug);
+    revalidatePath(schedulePath);
+    redirect(schedulePath);
 }
 
 export async function generateSchedule(formData: FormData) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const leagueSlug = formData.get("leagueSlug") as string;
+    const leagueSlug = formData.get(LEAGUE_SLUG_KEY) as string;
     const seasonId = formData.get("seasonId") as string;
 
     const [league] = await db.select().from(organizations).where(eq(organizations.slug, leagueSlug)).limit(1);
@@ -164,5 +190,5 @@ export async function generateSchedule(formData: FormData) {
         }
     }
 
-    revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    revalidatePath(getSchedulePath(leagueSlug));
 }

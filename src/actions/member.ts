@@ -7,17 +7,21 @@ import { leagueMembers, user } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import logger from "@/lib/logger";
-import { memberSchema, validateRequest, type ActionResponse } from "@/lib/validations";
+import { memberSchema, validateRequest, type ActionResponse, type NotificationPreference } from "@/lib/validations";
+
+const getMembersPath = (slug: string) => `/dashboard/${slug}/members`;
 
 export async function addMemberToLeague(prevState: unknown, formData: FormData): Promise<ActionResponse> {
     const session = await auth();
     if (!session?.user) return { success: false, message: "Unauthorized" };
 
+    const notificationPrefKey = "notificationPreference";
     const validation = validateRequest(memberSchema, {
         firstName: (formData.get("name") as string)?.split(' ')[0] || "",
         lastName: (formData.get("name") as string)?.split(' ').slice(1).join(' ') || "Player",
         email: formData.get("email") as string,
         role: (formData.get("role") as string) || "player",
+        notificationPreference: (formData.get(notificationPrefKey) as NotificationPreference) || "sms",
     });
 
     if (!validation.success) {
@@ -55,11 +59,11 @@ export async function addMemberToLeague(prevState: unknown, formData: FormData):
                 firstName: name ? name.split(' ')[0] : null,
                 lastName: name ? (name.indexOf(' ') > -1 ? name.split(' ').slice(1).join(' ') : name) : null,
                 phone: formData.get("phone") as string || null,
-                notificationPreference: (formData.get("notificationPreference") as string) || "sms",
+                notificationPreference: (formData.get(notificationPrefKey) as NotificationPreference) || "sms",
             }).returning();
         } else if (name && !targetUser.name) {
             const phone = formData.get("phone") as string;
-            const pref = formData.get("notificationPreference") as string;
+            const pref = (formData.get(notificationPrefKey) as NotificationPreference) || "sms";
 
             // Update name if it wasn't set
             await db.update(user).set({
@@ -67,7 +71,7 @@ export async function addMemberToLeague(prevState: unknown, formData: FormData):
                 firstName: name.split(' ')[0],
                 lastName: name.indexOf(' ') > -1 ? name.split(' ').slice(1).join(' ') : name,
                 ...(phone ? { phone } : {}),
-                ...(pref ? { notificationPreference: pref } : {})
+                notificationPreference: pref
             }).where(eq(user.id, targetUser.id));
         }
 
@@ -90,7 +94,7 @@ export async function addMemberToLeague(prevState: unknown, formData: FormData):
                 role,
             });
             logger.info({ leagueSlug, email, role }, "New member added to league");
-            revalidatePath(`/dashboard/${leagueSlug}/members`);
+            revalidatePath(getMembersPath(leagueSlug));
             return { success: true, message: "Member added successfully" };
         }
 
@@ -130,7 +134,7 @@ export async function removeMemberFromLeague(formData: FormData) {
 
     await db.delete(leagueMembers).where(eq(leagueMembers.id, memberId));
 
-    revalidatePath(`/dashboard/${leagueSlug}/members`);
+    revalidatePath(getMembersPath(leagueSlug));
 }
 
 export async function updateMember(formData: FormData) {
@@ -145,7 +149,8 @@ export async function updateMember(formData: FormData) {
     const phone = formData.get("phone") as string;
     const role = formData.get("role") as "admin" | "player" | "sub";
     const handicap = formData.get("handicap") as string;
-    const notificationPreference = formData.get("notificationPreference") as string;
+    const notificationPrefKey = "notificationPreference";
+    const notificationPreference = (formData.get(notificationPrefKey) as NotificationPreference) || "sms";
 
     // 1. Verify caller is admin (of the league that this member belongs to)
     const [memberToUpdate] = await db.select().from(leagueMembers).where(eq(leagueMembers.id, memberId)).limit(1);
@@ -194,8 +199,9 @@ export async function updateMember(formData: FormData) {
             .where(eq(user.id, userId));
     });
 
-    revalidatePath(`/dashboard/${leagueSlug}/members`);
-    redirect(`/dashboard/${leagueSlug}/members`);
+    const membersPath = getMembersPath(leagueSlug);
+    revalidatePath(membersPath);
+    redirect(membersPath);
 }
 
 export async function recalculateLeagueHandicaps(formData: FormData) {
@@ -250,7 +256,8 @@ export async function recalculateLeagueHandicaps(formData: FormData) {
         errorCount
     }, "Bulk handicap recalculation completed");
 
-    revalidatePath(`/dashboard/${leagueSlug}/members`);
+    const membersPath = getMembersPath(leagueSlug);
+    revalidatePath(membersPath);
     revalidatePath(`/dashboard/${leagueSlug}/leaderboard`);
-    redirect(`/dashboard/${leagueSlug}/members`);
+    redirect(membersPath);
 }

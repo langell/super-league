@@ -7,16 +7,23 @@ import { organizations, leagueMembers } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+import { leagueSchema } from "@/lib/validations";
+
 export async function createLeague(formData: FormData) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const name = formData.get("name") as string;
-    const slug = formData.get("slug") as string;
+    const rawData = {
+        name: formData.get("name"),
+        slug: formData.get("slug"),
+    };
 
-    if (!name || !slug) {
-        throw new Error("Name and Slug are required");
+    const validated = leagueSchema.safeParse(rawData);
+    if (!validated.success) {
+        throw new Error("Invalid input: " + JSON.stringify(validated.error.flatten().fieldErrors));
     }
+
+    const { name, slug } = validated.data;
 
     // 1. Create the organization
     const [org] = await db.insert(organizations).values({
@@ -40,10 +47,19 @@ export async function updateLeagueSettings(formData: FormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const leagueId = formData.get("leagueId") as string;
-    const name = formData.get("name") as string;
-    const slug = formData.get("slug") as string;
-    const handicapPercentage = formData.get("handicapPercentage") as string;
-    const minScoresToCalculate = parseInt(formData.get("minScoresToCalculate") as string) || 3;
+    const rawData = {
+        name: formData.get("name"),
+        slug: formData.get("slug"),
+        handicapPercentage: formData.get("handicapPercentage"),
+        minScoresToCalculate: parseInt(formData.get("minScoresToCalculate") as string) || 3,
+    };
+
+    const validated = leagueSchema.safeParse(rawData);
+    if (!validated.success) {
+        throw new Error("Invalid input: " + JSON.stringify(validated.error.flatten().fieldErrors));
+    }
+
+    const { name, slug, handicapPercentage, minScoresToCalculate } = validated.data;
 
     // Check if user is admin
     const [membership] = await db

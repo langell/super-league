@@ -8,6 +8,11 @@ const createChainMock = (result: unknown[]) => {
     return { from };
 };
 
+// Mock auth-utils
+vi.mock('@/lib/auth-utils', () => ({
+    getAuthenticatedSession: vi.fn().mockResolvedValue({ user: { id: 'u1' } }),
+}));
+
 // Mock DB
 vi.mock('@/db', () => ({
     db: {

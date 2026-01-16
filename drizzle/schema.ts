@@ -1,7 +1,4 @@
 import { pgTable, foreignKey, uuid, text, numeric, integer, timestamp, varchar, boolean, unique, primaryKey } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
-
-
 
 export const tees = pgTable("tees", {
 	id: uuid().defaultRandom().primaryKey().notNull(),

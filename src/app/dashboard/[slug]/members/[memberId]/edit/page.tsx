@@ -4,7 +4,7 @@ import { leagueMembers, user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
-import { updateMember, removeMemberFromLeague } from "@/app/actions";
+import { updateMember, removeMemberFromLeague } from "@/actions/member";
 import { notFound } from "next/navigation";
 
 const ICON_SIZE_SMALL = 16;

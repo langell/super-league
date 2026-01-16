@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Calendar, Plus, Users, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { createMatch, deleteMatch } from "@/app/actions";
+import { createMatch, deleteMatch } from "@/actions/match";
 import { notFound } from "next/navigation";
 
 export default async function RoundDetailPage({ params }: { params: Promise<{ slug: string; seasonId: string; roundId: string }> }) {

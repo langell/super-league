@@ -1,5 +1,5 @@
 import { getLeagueAdmin } from "@/lib/auth-utils";
-import { createCourse } from "@/app/actions";
+import { createCourse } from "@/actions/course";
 import { ArrowLeft, Sparkles, Plus } from "lucide-react";
 import Link from "next/link";
 import { CourseSearch } from "@/components/CourseSearch";

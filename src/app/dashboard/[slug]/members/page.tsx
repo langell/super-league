@@ -4,7 +4,7 @@ import { leagueMembers, user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { UserPlus, Shield, User as UserIcon, Trash2, Edit } from "lucide-react";
-import { removeMemberFromLeague } from "@/app/actions";
+import { removeMemberFromLeague } from "@/actions/member";
 import Image from "next/image";
 import { InviteMemberForm } from "@/components/InviteMemberForm";
 export default async function LeagueMembersPage({ params }: { params: Promise<{ slug: string }> }) {

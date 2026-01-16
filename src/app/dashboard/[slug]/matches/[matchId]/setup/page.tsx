@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { setupMatch } from "@/app/actions";
+import { setupMatch } from "@/actions/match";
 import Image from "next/image";
 
 export default async function MatchSetupPage({ params }: { params: Promise<{ slug: string; matchId: string }> }) {

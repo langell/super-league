@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { courses } from "@/db/schema";
 import Link from "next/link";
 import { ArrowLeft, Save, Wand2 } from "lucide-react";
-import { createSeason } from "@/app/actions";
+import { createSeason } from "@/actions/season";
 
 export default async function NewSeasonPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;

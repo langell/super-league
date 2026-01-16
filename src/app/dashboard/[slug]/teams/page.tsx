@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { Plus, Users, Trash2, X } from "lucide-react";
 import Image from "next/image";
-import { createTeam, deleteTeam, removeMemberFromTeam } from "@/app/actions";
+import { createTeam, deleteTeam, removeMemberFromTeam } from "@/actions/team";
 
 export default async function TeamsPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;

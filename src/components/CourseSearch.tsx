@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { searchCourses, CourseSearchResult } from "@/lib/course-api";
 import { Search, MapPin, Plus, Loader2, Sparkles } from "lucide-react";
-import { importCourseFromApi } from "@/app/actions";
+import { importCourseFromApi } from "@/actions/course";
 
 export function CourseSearch({ leagueSlug }: { leagueSlug: string }) {
     const [query, setQuery] = useState("");

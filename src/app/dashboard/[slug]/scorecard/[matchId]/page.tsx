@@ -6,7 +6,7 @@ import { eq, and, asc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
-import { saveScorecard } from "@/app/actions";
+import { saveScorecard } from "@/actions/score";
 
 export default async function MatchScorecardPage({ params }: { params: Promise<{ slug: string; matchId: string }> }) {
     const { slug, matchId } = await params;

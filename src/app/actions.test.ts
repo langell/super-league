@@ -48,6 +48,12 @@ const createChainMock = (result: unknown[]) => {
         from: vi.fn(() => mockChain),
         innerJoin: vi.fn(() => mockChain),
         orderBy: vi.fn(() => mockChain),
+        leftJoin: vi.fn(() => mockChain),
+        fields: {},
+        session: {},
+        dialect: {},
+        withList: [],
+        distinct: vi.fn(() => mockChain),
     };
     return mockChain;
 };

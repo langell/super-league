@@ -1,5 +1,5 @@
 import { getLeagueAdmin } from "@/lib/auth-utils";
-import { updateLeagueSettings } from "@/app/actions";
+import { updateLeagueSettings } from "@/actions/league";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 

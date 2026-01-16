@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { addMemberToLeague } from "@/app/actions";
+import { addMemberToLeague } from "@/actions/member";
 import { UserPlus } from "lucide-react";
 import { type ActionResponse } from "@/lib/validations";
 

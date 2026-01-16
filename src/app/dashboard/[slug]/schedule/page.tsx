@@ -4,7 +4,7 @@ import { seasons, rounds, courses } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import Link from "next/link";
 import { Calendar, Plus, MapPin, ChevronRight, Trophy, Edit } from "lucide-react";
-import { generateSchedule } from "@/app/actions";
+import { generateSchedule } from "@/actions/round";
 
 export default async function SchedulePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;

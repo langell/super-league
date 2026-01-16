@@ -1,5 +1,5 @@
 import { getLeagueAdmin } from "@/lib/auth-utils";
-import { updateCourse } from "@/app/actions";
+import { updateCourse } from "@/actions/course";
 import { ArrowLeft, Edit, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
@@ -241,7 +241,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ slu
                             <form action={async (formData) => {
                                 "use server";
                                 // Re-import to avoid "deleteCourse is not a function" client-side ambiguity if any
-                                const { deleteCourse } = await import("@/app/actions");
+                                const { deleteCourse } = await import("@/actions/course");
                                 await deleteCourse(formData);
                             }}>
                                 <input type="hidden" name="leagueSlug" value={slug} />

@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { createLeague } from "@/app/actions";
+import { createLeague } from "@/actions/league";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 

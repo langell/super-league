@@ -4,7 +4,7 @@ import { rounds, courses } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
-import { updateRound, deleteRound } from "@/app/actions";
+import { updateRound, deleteRound } from "@/actions/round";
 import { notFound } from "next/navigation";
 
 export default async function EditRoundPage({ params }: { params: Promise<{ slug: string; seasonId: string; roundId: string }> }) {

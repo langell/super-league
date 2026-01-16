@@ -4,7 +4,7 @@ import { seasons, courses } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
-import { createRound } from "@/app/actions";
+import { createRound } from "@/actions/round";
 import { notFound } from "next/navigation";
 
 export default async function NewRoundPage({ params }: { params: Promise<{ slug: string; seasonId: string }> }) {

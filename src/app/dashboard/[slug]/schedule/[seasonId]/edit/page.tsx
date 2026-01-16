@@ -4,7 +4,7 @@ import { seasons, courses, rounds } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, Save, Wand2, Trash2 } from "lucide-react";
-import { updateSeason, deleteSeason } from "@/app/actions";
+import { updateSeason, deleteSeason } from "@/actions/season";
 import { notFound } from "next/navigation";
 
 export default async function EditSeasonPage({ params }: { params: Promise<{ slug: string; seasonId: string }> }) {

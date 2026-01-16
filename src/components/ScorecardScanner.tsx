@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Camera, Loader2, AlertCircle, Sparkles, Save } from "lucide-react";
-import { scanScorecardAction, saveExtractedCourseAction, updateCourseFromScanAction } from "@/app/actions";
+import { scanScorecardAction, saveExtractedCourseAction, updateCourseFromScanAction } from "@/actions/course";
 
 const ICON_SIZE_LARGE = 32;
 const ICON_SIZE_MEDIUM = 20;

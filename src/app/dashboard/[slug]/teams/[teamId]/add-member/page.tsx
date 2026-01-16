@@ -5,7 +5,7 @@ import { eq, notInArray, and } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, PlusCircle, User, Users } from "lucide-react";
 import Image from "next/image";
-import { addMemberToTeam } from "@/app/actions";
+import { addMemberToTeam } from "@/actions/team";
 import { redirect } from "next/navigation";
 
 export default async function AddTeamMemberPage({ params }: { params: Promise<{ slug: string; teamId: string }> }) {

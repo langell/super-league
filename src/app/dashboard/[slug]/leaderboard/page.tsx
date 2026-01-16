@@ -49,8 +49,12 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
         .select()
         .from(rounds)
         .innerJoin(matches, eq(rounds.id, matches.roundId))
+        .innerJoin(seasons, eq(rounds.seasonId, seasons.id))
         .where(
-            inArray(rounds.status, ["in_progress", "completed", "scheduled"])
+            and(
+                eq(seasons.organizationId, league.id),
+                inArray(rounds.status, ["in_progress", "completed", "scheduled"])
+            )
         )
         .orderBy(desc(rounds.date))
         .limit(RECENT_ROUNDS_LIMIT); // Fetch detailed data for a few rounds, but we'll focus on the top one
@@ -115,7 +119,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             if (!team.players.has(row.playerId)) {
                 team.players.set(row.playerId, {
                     id: row.playerId,
-                    name: row.firstName ? `${row.firstName} ${row.lastName?.[0]}.` : row.userName,
+                    name: row.firstName ? `${row.firstName} ${row.lastName}` : row.userName,
                     image: row.userImage,
                     scores: new Map() // holeNumber -> score
                 });

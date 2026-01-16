@@ -39,6 +39,7 @@ type ProcessedMatch = {
     teamB: TeamAccumulator | null;
     status: string;
     holesPlayed: number;
+    leadingTeam: 'A' | 'B' | 'AS';
 };
 
 export default async function LeagueAdminDashboard({ params }: { params: Promise<{ slug: string }> }) {
@@ -51,8 +52,12 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
         .select()
         .from(rounds)
         .innerJoin(matches, eq(rounds.id, matches.roundId))
+        .innerJoin(seasons, eq(rounds.seasonId, seasons.id))
         .where(
-            inArray(rounds.status, ["in_progress", "completed", "scheduled"])
+            and(
+                eq(seasons.organizationId, league.id),
+                inArray(rounds.status, ["in_progress", "completed", "scheduled"])
+            )
         )
         .orderBy(desc(rounds.date))
         .limit(1);
@@ -110,7 +115,7 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
             if (!team.players.has(row.playerId)) {
                 team.players.set(row.playerId, {
                     id: row.playerId,
-                    name: row.firstName ? `${row.firstName} ${row.lastName?.[0]}.` : row.userName,
+                    name: row.firstName ? `${row.firstName} ${row.lastName}` : row.userName,
                     image: row.userImage,
                     scores: new Map()
                 });
@@ -131,7 +136,8 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                 teamA: teamsArr[0] || null,
                 teamB: teamsArr[1] || null,
                 status: "Invalid",
-                holesPlayed: 0
+                holesPlayed: 0,
+                leadingTeam: 'AS' as const
             };
             const teamA = teamsArr[0];
             const teamB = teamsArr[1];
@@ -153,20 +159,31 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
             }
 
             let statusText = "AS";
+            let leadingTeam: 'A' | 'B' | 'AS' = 'AS';
             const nameA = teamA.players.values().next().value?.name?.split(' ')[0] || "Team A";
             const nameB = teamB.players.values().next().value?.name?.split(' ')[0] || "Team B";
 
-            if (holesWonA > holesWonB) statusText = `${nameA} ${holesWonA - holesWonB}UP`;
-            else if (holesWonB > holesWonA) statusText = `${nameB} ${holesWonB - holesWonA}UP`;
-            else if (holesPlayed > 0) statusText = "AS";
-            else statusText = "VS"; // Show VS if not started
+            if (holesWonA > holesWonB) {
+                statusText = `${holesWonA - holesWonB} UP`;
+                leadingTeam = 'A';
+            } else if (holesWonB > holesWonA) {
+                statusText = `${holesWonB - holesWonA} UP`;
+                leadingTeam = 'B';
+            } else if (holesPlayed > 0) {
+                statusText = "AS";
+                leadingTeam = 'AS';
+            } else {
+                statusText = "VS";
+                leadingTeam = 'AS';
+            }
 
             return {
                 id: m.id,
                 teamA,
                 teamB,
                 status: statusText,
-                holesPlayed
+                holesPlayed,
+                leadingTeam
             };
         });
     }
@@ -275,34 +292,50 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                                 </Link>
                             </div>
 
-                            <div className="space-y-3 relative z-10">
+                            <div className="space-y-4 relative z-10">
                                 {liveMatches.slice(0, MAX_DASHBOARD_LIVE_MATCHES).map(match => (
-                                    <div key={match.id} className="bg-zinc-950/50 rounded-xl p-3 flex justify-between items-center border border-zinc-800/50">
-                                        <div className="flex items-center gap-3">
-                                            {/* Team A Avatars */}
-                                            <div className="flex -space-x-2">
+                                    <div key={match.id} className="bg-zinc-950/40 backdrop-blur-sm rounded-2xl p-4 flex justify-between items-center border border-zinc-800/50 hover:border-emerald-500/30 transition-all group/match">
+                                        {/* Team A */}
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <div className="flex -space-x-3">
                                                 {match.teamA && Array.from(match.teamA.players.values()).map(p => (
-                                                    <div key={p.id} className="w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-900 overflow-hidden relative">
+                                                    <div key={p.id} className={`w-10 h-10 rounded-full bg-zinc-800 border-2 transition-transform group-hover/match:scale-110 ${match.leadingTeam === 'A' ? 'border-emerald-500' : 'border-zinc-900'} overflow-hidden relative`}>
                                                         {p.image && <Image src={p.image} alt="" fill className="object-cover" />}
                                                     </div>
                                                 ))}
                                             </div>
-                                            <span className="font-bold text-sm text-zinc-300">
-                                                {match.teamA && Array.from(match.teamA.players.values()).map(p => p.name?.split(' ')[1] || p.name).join('/')}
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <span className={`font-bold text-sm transition-colors ${match.leadingTeam === 'A' ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                                                    {match.teamA && Array.from(match.teamA.players.values()).map(p => p.name?.split(' ').pop() || p.name).join(' & ')}
+                                                </span>
+                                                {match.leadingTeam === 'A' && <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Leading</span>}
+                                            </div>
                                         </div>
 
-                                        <div className="px-3 py-1 rounded bg-zinc-900 text-xs font-bold text-zinc-400 border border-zinc-800 min-w-[60px] text-center">
-                                            {match.status}
+                                        {/* Match Score / Status */}
+                                        <div className="flex flex-col items-center px-4 min-w-[100px]">
+                                            <div className={`px-4 py-1.5 rounded-full text-xs font-black border transition-all ${match.leadingTeam !== 'AS'
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                                                : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+                                                }`}>
+                                                {match.status}
+                                            </div>
+                                            {match.holesPlayed > 0 && (
+                                                <span className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-tight">Thru {match.holesPlayed}</span>
+                                            )}
                                         </div>
 
-                                        <div className="flex items-center gap-3 justify-end">
-                                            <span className="font-bold text-sm text-zinc-300">
-                                                {match.teamB && Array.from(match.teamB.players.values()).map(p => p.name?.split(' ')[1] || p.name).join('/')}
-                                            </span>
-                                            <div className="flex -space-x-2 flex-row-reverse">
+                                        {/* Team B */}
+                                        <div className="flex items-center gap-4 flex-1 justify-end text-right">
+                                            <div className="flex flex-col">
+                                                <span className={`font-bold text-sm transition-colors ${match.leadingTeam === 'B' ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                                                    {match.teamB && Array.from(match.teamB.players.values()).map(p => p.name?.split(' ').pop() || p.name).join(' & ')}
+                                                </span>
+                                                {match.leadingTeam === 'B' && <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Leading</span>}
+                                            </div>
+                                            <div className="flex -space-x-3 flex-row-reverse">
                                                 {match.teamB && Array.from(match.teamB.players.values()).map(p => (
-                                                    <div key={p.id} className="w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-900 overflow-hidden relative">
+                                                    <div key={p.id} className={`w-10 h-10 rounded-full bg-zinc-800 border-2 transition-transform group-hover/match:scale-110 ${match.leadingTeam === 'B' ? 'border-emerald-500' : 'border-zinc-900'} overflow-hidden relative`}>
                                                         {p.image && <Image src={p.image} alt="" fill className="object-cover" />}
                                                     </div>
                                                 ))}
@@ -315,13 +348,13 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
                                         + {liveMatches.length - 3} more matches
                                     </div>
                                 )}
-                            </div>
 
-                            {/* Quick Action */}
-                            <div className="mt-6 pt-6 border-t border-zinc-800 flex justify-end">
-                                <Link href={scheduleHref} className="inline-flex items-center gap-2 text-sm font-bold text-emerald-500 hover:text-emerald-400">
-                                    Manage Round <Play size={ICON_SIZE_TINY} />
-                                </Link>
+                                {/* Quick Action */}
+                                <div className="mt-6 pt-6 border-t border-zinc-800 flex justify-end">
+                                    <Link href={scheduleHref} className="inline-flex items-center gap-2 text-sm font-bold text-emerald-500 hover:text-emerald-400">
+                                        Manage Round <Play size={ICON_SIZE_TINY} />
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     ) : (

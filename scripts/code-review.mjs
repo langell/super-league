@@ -29,13 +29,15 @@ function collectFiles(currentPath) {
   if (stats.isDirectory()) {
     const files = fs.readdirSync(currentPath);
     files.forEach(file => {
-      // Ignore hidden files, node_modules, and tests
-      if (file.startsWith('.') || file === 'node_modules' || file === '__tests__') return;
+      // Ignore hidden files, node_modules, scripts, and tests
+      if (file.startsWith('.') || file === 'node_modules' || file === 'scripts' || file === '__tests__') return;
       collectFiles(path.join(currentPath, file));
     });
   } else {
-    // Only review JS/TS files, skip tests
-    if (currentPath.match(/\.(js|ts|jsx|tsx|mjs)$/) && !currentPath.match(/\.(test|spec)\./)) {
+    // Only review JS/TS files, skip tests and scripts
+    const normalizedPath = currentPath.replace(/\\/g, '/');
+    const isScript = normalizedPath.includes('/scripts/') || normalizedPath.startsWith('scripts/');
+    if (normalizedPath.match(/\.(js|ts|jsx|tsx|mjs)$/) && !normalizedPath.match(/\.(test|spec)\./) && !isScript) {
       filesToReview.push(currentPath);
     }
   }

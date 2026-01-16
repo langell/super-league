@@ -8,7 +8,7 @@ export default defineConfig({
         environment: 'node',
         globals: true,
         setupFiles: './src/test/setup.ts',
-        exclude: ['node_modules', 'e2e', 'dist', '.idea', '.git', '.cache', '.next'],
+        exclude: ['node_modules', 'e2e', 'scripts', 'dist', '.idea', '.git', '.cache', '.next'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
@@ -24,6 +24,7 @@ export default defineConfig({
                 '**/*.d.ts',
                 '**/*.test.ts',
                 '**/*.test.tsx',
+                'scripts/**',
             ],
             thresholds: {
                 lines: 70,

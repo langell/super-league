@@ -31,9 +31,6 @@ export async function validateMemberRole(organizationId: string, allowedRoles: (
     const session = await getAuthenticatedSession();
 
     const userId = session.user.id;
-    if (!userId) {
-        throw new AuthError("Unauthorized: User ID missing");
-    }
 
     const [membership] = await db
         .select({

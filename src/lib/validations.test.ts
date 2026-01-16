@@ -63,8 +63,7 @@ describe('validations', () => {
     describe('scoreSchema', () => {
         it('validates correct score object', () => {
             const result = scoreSchema.safeParse({
-                matchId: '550e8400-e29b-41d4-a716-446655440000',
-                playerId: '550e8400-e29b-41d4-a716-446655440001',
+                matchPlayerId: '550e8400-e29b-41d4-a716-446655440001',
                 holeId: '550e8400-e29b-41d4-a716-446655440002',
                 grossScore: 4
             });
@@ -73,8 +72,7 @@ describe('validations', () => {
 
         it('rejects invalid UUIDs', () => {
             expect(scoreSchema.safeParse({
-                matchId: 'invalid-id',
-                playerId: '550e8400-e29b-41d4-a716-446655440001',
+                matchPlayerId: 'invalid-id',
                 holeId: '550e8400-e29b-41d4-a716-446655440002',
                 grossScore: 4
             }).success).toBe(false);
@@ -82,8 +80,7 @@ describe('validations', () => {
 
         it('rejects unrealistic scores', () => {
             expect(scoreSchema.safeParse({
-                matchId: '550e8400-e29b-41d4-a716-446655440000',
-                playerId: '550e8400-e29b-41d4-a716-446655440001',
+                matchPlayerId: '550e8400-e29b-41d4-a716-446655440001',
                 holeId: '550e8400-e29b-41d4-a716-446655440002',
                 grossScore: 25
             }).success).toBe(false);

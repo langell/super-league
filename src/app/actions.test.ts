@@ -414,7 +414,10 @@ describe('actions', () => {
         it('saves scores successfully', async () => {
             vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'user-1' } } as never);
 
-            vi.mocked(db.select).mockReturnValueOnce(createChainMock([{ id: 'match-1', organizationId: 'org-1' }]));
+            vi.mocked(db.select)
+                .mockReturnValueOnce(createChainMock([{ id: 'match-1', roundId: 'round-1' }]))
+                .mockReturnValueOnce(createChainMock([{ seasonId: 'season-1' }]))
+                .mockReturnValueOnce(createChainMock([{ organizationId: 'org-1' }]));
 
             const formData = new FormData();
             formData.append('matchId', 'match-1');
@@ -482,17 +485,17 @@ describe('actions', () => {
         });
 
         // TODO: Fix these tests - mocking issue with error conditions
-        // it('throws error when team is full', async () => {
-        //     vi.mocked(db.select).mockReturnValueOnce(createChainMock([{ id: 'tm-1' }, { id: 'tm-2' }]));
+        it('throws error when team is full', async () => {
+            vi.mocked(db.select).mockReturnValueOnce(createChainMock([{ id: 'tm-1' }, { id: 'tm-2' }]));
 
-        //     const formData = new FormData();
-        //     formData.append('leagueSlug', 'test-league');
-        //     formData.append('teamId', 'team-1');
-        //     formData.append('leagueMemberId', 'lm-1');
+            const formData = new FormData();
+            formData.append('leagueSlug', 'test-league');
+            formData.append('teamId', 'team-1');
+            formData.append('leagueMemberId', 'lm-1');
 
-        //     await expect(addMemberToTeam(formData)).rejects.toThrow('Team is full');
-        //     expect(db.insert).not.toHaveBeenCalled();
-        // });
+            await expect(addMemberToTeam(formData)).rejects.toThrow('Team is full');
+            expect(db.insert).not.toHaveBeenCalled();
+        });
     });
 
     describe('League Settings', () => {
@@ -512,20 +515,19 @@ describe('actions', () => {
             expect(revalidatePath).toHaveBeenCalledWith('/dashboard/updated-league/settings');
         });
 
-        // TODO: Fix this test - mocking issue with error conditions
-        // it('throws error when non-admin tries to update settings', async () => {
-        //     vi.mocked(auth).mockResolvedValue({ user: { id: 'user-1' } } as never);
-        //     vi.mocked(db.select).mockReturnValueOnce(createChainMock([]));
+        it('throws error when non-admin tries to update settings', async () => {
+            vi.mocked(auth).mockResolvedValue({ user: { id: 'user-1' } } as never);
+            vi.mocked(db.select).mockReturnValueOnce(createChainMock([]));
 
-        //     const formData = new FormData();
-        //     formData.append('leagueId', 'org-1');
-        //     formData.append('name', 'Updated League');
-        //     formData.append('slug', 'updated-league');
-        //     formData.append('handicapPercentage', '90');
-        //     formData.append('minScoresToCalculate', '5');
+            const formData = new FormData();
+            formData.append('leagueId', 'org-1');
+            formData.append('name', 'Updated League');
+            formData.append('slug', 'updated-league');
+            formData.append('handicapPercentage', '90');
+            formData.append('minScoresToCalculate', '5');
 
-        //     await expect(updateLeagueSettings(formData)).rejects.toThrow('Unauthorized');
-        //     expect(db.update).not.toHaveBeenCalled();
-        // });
+            await expect(updateLeagueSettings(formData)).rejects.toThrow('Unauthorized');
+            expect(db.update).not.toHaveBeenCalled();
+        });
     });
 });

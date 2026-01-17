@@ -124,7 +124,7 @@ describe('Round Actions', () => {
         validFormData.append('courseId', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22');
         validFormData.append('date', '2023-01-02');
         validFormData.append('holesCount', '9');
-        validFormData.append('roundType', '9_holes');
+        validFormData.append('roundType', 'front_9');
         validFormData.append('status', 'complete');
 
         it('throws unauthorized if not logged in', async () => {

@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { subRequests, matchPlayers, seasons, rounds, matches } from "@/db/schema";
+import { subRequests, matchPlayers, seasons, rounds, matches, subRequestNotifications } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { notificationService } from "@/services/notification-service";
@@ -14,6 +14,10 @@ export async function createSubRequest(formData: FormData) {
     const matchId = formData.get("matchId") as string;
     const note = formData.get("note") as string;
     const leagueSlug = formData.get("leagueSlug") as string;
+    const subIds = formData.getAll("subIds") as string[];
+
+    if (!matchId) throw new Error("Match Selection is required");
+    if (subIds.length === 0) throw new Error("At least one sub must be selected");
 
     // Find the player's slot in this match and organization ID
     const rows = await db
@@ -39,22 +43,37 @@ export async function createSubRequest(formData: FormData) {
 
     if (!playerSlot) throw new Error("Match participation not found");
 
-    // Create Request
-    await db.insert(subRequests).values({
-        matchPlayerId: playerSlot.id,
-        requestedByUserId: session.user.id,
-        note,
-        status: "open",
+    const currentUserId = session.user.id;
+
+    await db.transaction(async (tx) => {
+        // 1. Create Request
+        const [request] = await tx.insert(subRequests).values({
+            matchPlayerId: playerSlot.id,
+            requestedByUserId: currentUserId,
+            note,
+            status: "open",
+        }).returning();
+
+        // 2. record who was notified
+        if (subIds.length > 0) {
+            await tx.insert(subRequestNotifications).values(
+                subIds.map(userId => ({
+                    subRequestId: request.id,
+                    userId,
+                }))
+            );
+        }
     });
 
-    // Notify Subs via Service
-    await notificationService.broadcastSubRequest(
-        playerSlot.organizationId,
+    // Notify Selected Subs
+    await notificationService.sendSubRequest(
+        subIds,
         playerSlot.date,
         note
     );
 
     revalidatePath(`/dashboard/${leagueSlug}/schedule`);
+    revalidatePath(`/dashboard/${leagueSlug}/sub-requests`);
 }
 
 export async function acceptSubRequest(formData: FormData) {
@@ -73,12 +92,27 @@ export async function acceptSubRequest(formData: FormData) {
     if (!request) throw new Error("Request not found");
     if (request.status !== "open") throw new Error("Request is not open");
 
+    // 1. Verify user was notified for this request
+    const currentUserId = session.user.id;
+    const [notification] = await db
+        .select()
+        .from(subRequestNotifications)
+        .where(
+            and(
+                eq(subRequestNotifications.subRequestId, requestId),
+                eq(subRequestNotifications.userId, currentUserId)
+            )
+        )
+        .limit(1);
+
+    if (!notification) throw new Error("You were not invited to fill this spot");
+
     await db.transaction(async (tx) => {
         // 1. Mark request as filled
         await tx.update(subRequests)
             .set({
                 status: "filled",
-                filledByUserId: session.user?.id,
+                filledByUserId: currentUserId,
                 updatedAt: new Date()
             })
             .where(eq(subRequests.id, requestId));

@@ -43,7 +43,7 @@ export const roundSchema = z.object({
     courseId: z.string().uuid(),
     date: z.string().or(z.date()),
     holesCount: z.number().int().min(9).max(18).default(18),
-    roundType: z.enum(["9_holes", "18_holes"]).default("18_holes"),
+    roundType: z.enum(["front_9", "back_9", "18_holes"]).default("18_holes"),
 });
 
 // Member validation

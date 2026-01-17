@@ -223,6 +223,18 @@ export const subRequests = pgTable("sub_requests", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Targeted Sub Notifications
+export const subRequestNotifications = pgTable("sub_request_notifications", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    subRequestId: uuid("sub_request_id")
+        .references(() => subRequests.id, { onDelete: "cascade" })
+        .notNull(),
+    userId: uuid("user_id")
+        .references(() => user.id)
+        .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Hole-by-hole scores
 export const scores = pgTable("scores", {
     id: uuid("id").primaryKey().defaultRandom(),

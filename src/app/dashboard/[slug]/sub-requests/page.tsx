@@ -1,14 +1,18 @@
-// import { auth } from "@/auth"; // Not used currently
+import { auth } from "@/auth";
 import { db } from "@/db";
-import { subRequests, matchPlayers, matches, rounds, courses, user, organizations, seasons } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { subRequests, matchPlayers, matches, rounds, courses, user, organizations, seasons, subRequestNotifications } from "@/db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { acceptSubRequest } from "@/actions/sub-request";
-import { Calendar, MapPin, CheckCircle } from "lucide-react";
+import { Calendar, MapPin, CheckCircle, ShieldAlert } from "lucide-react";
 import Image from "next/image";
+
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 export default async function SubRequestsPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    // Removed unused session
+    const session = await auth();
+    const currentUserId = session?.user?.id;
 
     const [league] = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
 
@@ -19,6 +23,7 @@ export default async function SubRequestsPage({ params }: { params: Promise<{ sl
             id: subRequests.id,
             note: subRequests.note,
             createdAt: subRequests.createdAt,
+            requesterId: subRequests.requestedByUserId,
             requesterName: user.name,
             requesterImage: user.image,
             requesterFirstName: user.firstName,
@@ -42,10 +47,36 @@ export default async function SubRequestsPage({ params }: { params: Promise<{ sl
         )
         .orderBy(desc(subRequests.createdAt));
 
+    // Get requests the current user is notified for
+    let notifiedRequestIds = new Set<string>();
+    if (currentUserId && openRequests.length > 0) {
+        const notifications = await db
+            .select({ subRequestId: subRequestNotifications.subRequestId })
+            .from(subRequestNotifications)
+            .where(
+                and(
+                    eq(subRequestNotifications.userId, currentUserId),
+                    inArray(subRequestNotifications.subRequestId, openRequests.map(r => r.id))
+                )
+            );
+        notifiedRequestIds = new Set(notifications.map(n => n.subRequestId));
+    }
+
     return (
         <div className="w-full py-12 px-8">
-            <h1 className="text-3xl font-bold mb-2">Sub Requests</h1>
-            <p className="text-zinc-400 mb-8">Roster openings available for claim.</p>
+            <div className="flex justify-between items-center mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">Sub Requests</h1>
+                    <p className="text-zinc-400">Roster openings available for claim.</p>
+                </div>
+                <Link
+                    href={`/dashboard/${slug}/sub-requests/new`}
+                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-emerald-500/10"
+                >
+                    <Plus size={20} />
+                    <span>Request Sub</span>
+                </Link>
+            </div>
 
             {openRequests.length === 0 ? (
                 <div className="p-12 text-center border-2 border-dashed border-zinc-800 rounded-3xl text-zinc-600">
@@ -60,7 +91,13 @@ export default async function SubRequestsPage({ params }: { params: Promise<{ sl
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden relative flex-shrink-0">
                                     {req.requesterImage ? (
-                                        <Image src={req.requesterImage} alt="" fill className="object-cover" />
+                                        <Image
+                                            src={req.requesterImage}
+                                            alt=""
+                                            fill
+                                            sizes="48px"
+                                            className="object-cover"
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-zinc-500 font-bold">
                                             {req.requesterFirstName?.[0] || "?"}
@@ -89,13 +126,24 @@ export default async function SubRequestsPage({ params }: { params: Promise<{ sl
                                 </div>
                             </div>
 
-                            <form action={acceptSubRequest} className="w-full md:w-auto">
-                                <input type="hidden" name="leagueSlug" value={slug} />
-                                <input type="hidden" name="requestId" value={req.id} />
-                                <button className="w-full md:w-auto px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)]">
-                                    Accept Spot
-                                </button>
-                            </form>
+                            {notifiedRequestIds.has(req.id) ? (
+                                <form action={acceptSubRequest} className="w-full md:w-auto">
+                                    <input type="hidden" name="leagueSlug" value={slug} />
+                                    <input type="hidden" name="requestId" value={req.id} />
+                                    <button className="w-full md:w-auto px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                                        Accept Spot
+                                    </button>
+                                </form>
+                            ) : req.requesterId === currentUserId ? (
+                                <div className="px-4 py-2 bg-zinc-800 text-zinc-400 rounded-lg text-sm font-medium border border-zinc-700">
+                                    Your Request
+                                </div>
+                            ) : (
+                                <div className="px-4 py-2 bg-zinc-800/50 text-zinc-500 rounded-lg text-sm font-medium border border-zinc-800 flex items-center gap-2">
+                                    <ShieldAlert size={14} />
+                                    Targeted Request
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

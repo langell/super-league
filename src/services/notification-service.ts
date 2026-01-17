@@ -98,13 +98,19 @@ export class NotificationService {
                 )
             );
 
+        await this.sendSubRequest(subs.map(s => s.userId), matchDate, note);
+    }
+
+    /**
+     * Notify specific users about a sub request
+     */
+    async sendSubRequest(userIds: string[], matchDate: Date, note: string) {
         const dateStr = matchDate.toLocaleDateString();
         const message = `A sub is needed for a match on ${dateStr}. Note: ${note}`;
 
-        // In a real system, you might queue these. For now, we await loop.
-        for (const sub of subs) {
+        for (const userId of userIds) {
             await this.dispatch(
-                sub.userId,
+                userId,
                 "Sub Request",
                 message
             );

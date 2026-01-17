@@ -18,7 +18,7 @@ vi.mock('next/cache', () => ({
 }));
 
 vi.mock('@/auth', () => ({
-    auth: vi.fn(),
+    auth: vi.fn() as any,
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -109,7 +109,7 @@ describe('Member Actions', () => {
         formData.append('leagueSlug', 'test-league');
 
         it('returns forbidden if not authenticated', async () => {
-            vi.mocked(auth).mockResolvedValueOnce(null as never);
+            vi.mocked(auth).mockResolvedValueOnce(null as any);
             const result = await addMemberToLeague({}, formData);
             expect(result.success).toBe(false);
             expect(result.message).toBe('Unauthorized');
@@ -221,7 +221,7 @@ describe('Member Actions', () => {
         formData.append('leagueSlug', 'test-league');
 
         it('throws unauthorized if not logged in', async () => {
-            vi.mocked(auth).mockResolvedValueOnce(null);
+            vi.mocked(auth).mockResolvedValueOnce(null as any);
             await expect(removeMemberFromLeague(formData)).rejects.toThrow('Unauthorized');
         });
 
@@ -267,7 +267,7 @@ describe('Member Actions', () => {
         formData.append('handicap', '10');
 
         it('throws unauthorized if not logged in', async () => {
-            vi.mocked(auth).mockResolvedValueOnce(null);
+            vi.mocked(auth).mockResolvedValueOnce(null as any);
             await expect(updateMember(formData)).rejects.toThrow('Unauthorized');
         });
 
@@ -313,7 +313,7 @@ describe('Member Actions', () => {
             // Verify the update call arguments
             // mockSet is called by mockTx.update().set()
             // access the 2nd call to .set() in the transaction
-            const updateCallArgs = mockSet.mock.calls[1][0] as { name: string };
+            const updateCallArgs = (mockSet as any).mock.calls[1][0] as unknown as { name: string };
             expect(updateCallArgs.name).toBe('Jane');
         });
 
@@ -325,7 +325,7 @@ describe('Member Actions', () => {
         formData.append('leagueSlug', 'test-league');
 
         it('throws unauthorized if not logged in', async () => {
-            vi.mocked(auth).mockResolvedValueOnce(null);
+            vi.mocked(auth).mockResolvedValueOnce(null as any);
             await expect(recalculateLeagueHandicaps(formData)).rejects.toThrow('Unauthorized');
         });
 

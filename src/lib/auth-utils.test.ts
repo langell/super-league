@@ -147,12 +147,20 @@ describe('auth-utils', () => {
             expect(redirect).toHaveBeenCalledWith('/api/auth/signin');
         });
 
-        it('redirects to dashboard if user is not an admin', async () => {
+        it('redirects to dashboard if user is not a member', async () => {
             vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'user-1' } } as never);
-            mockLimit.mockResolvedValueOnce([]); // No result
+            mockLimit.mockResolvedValueOnce([]); // No result from getLeagueMember
 
             await expect(getLeagueAdmin('test-slug')).rejects.toThrow('Redirect to /dashboard');
             expect(redirect).toHaveBeenCalledWith('/dashboard');
+        });
+
+        it('redirects to league dashboard if user is a member but not an admin', async () => {
+            vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'user-1' } } as never);
+            mockLimit.mockResolvedValueOnce([{ role: 'player' }]); // Is a member
+
+            await expect(getLeagueAdmin('test-slug')).rejects.toThrow('Redirect to /dashboard/test-slug');
+            expect(redirect).toHaveBeenCalledWith('/dashboard/test-slug');
         });
 
         it('return league details if user is an admin', async () => {
@@ -166,12 +174,12 @@ describe('auth-utils', () => {
             expect(redirect).not.toHaveBeenCalled();
         });
 
-        it('redirects to dashboard if user id is missing', async () => {
+        it('redirects to signin if user id is missing', async () => {
             vi.mocked(auth).mockResolvedValueOnce({ user: { name: 'No ID' } } as never); // User exists but no ID
-            mockLimit.mockResolvedValueOnce([]); // Query will use "" and find nothing
+            mockLimit.mockResolvedValueOnce([]); // Not even reached
 
-            await expect(getLeagueAdmin('test-slug')).rejects.toThrow('Redirect to /dashboard');
-            expect(redirect).toHaveBeenCalledWith('/dashboard');
+            await expect(getLeagueAdmin('test-slug')).rejects.toThrow('Redirect to /api/auth/signin');
+            expect(redirect).toHaveBeenCalledWith('/api/auth/signin');
         });
     });
 });

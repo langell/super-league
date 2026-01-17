@@ -2,9 +2,11 @@ import { auth, signOut } from "@/auth";
 import { db } from "@/db";
 import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { LogOut, Camera, UserPlus, Home } from "lucide-react";
+import { LogOut, Camera, Home } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { updateUserProfile } from "@/actions/user";
+import { ProfileForm } from "@/components/ProfileForm";
 
 export default async function ProfilePage({ params }: { params: { slug: string } }) {
     const session = await auth();
@@ -46,30 +48,29 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     <h1 className="text-[22px] font-normal text-white">Hi, {displayName}!</h1>
                 </div>
 
-                {/* Manage Button */}
-                <div className="px-10 pb-8 flex justify-center">
-                    <Link
-                        href={`/dashboard/${params.slug}/settings`}
-                        className="inline-block px-6 py-2.5 rounded-full border border-zinc-600/80 text-zinc-300 font-medium text-sm hover:bg-zinc-800 hover:border-zinc-500 hover:text-white transition-all"
-                    >
-                        Manage your Leaguely Account
-                    </Link>
+                {/* Profile Edit Form */}
+                <div className="border-t border-zinc-800">
+                    <ProfileForm
+                        user={{
+                            id: userInfo.id,
+                            firstName: userInfo.firstName,
+                            lastName: userInfo.lastName,
+                            email: userInfo.email,
+                            phone: userInfo.phone,
+                            ghinId: userInfo.ghinId,
+                            venmoHandle: userInfo.venmoHandle,
+                        }}
+                        action={updateUserProfile}
+                    />
                 </div>
 
-                {/* List Actions */}
+                {/* Sign Out */}
                 <div className="border-t border-zinc-800">
-                    <button className="w-full flex items-center gap-4 px-8 py-5 hover:bg-zinc-800/50 transition-colors text-left group">
-                        <div className="w-6 text-zinc-400 group-hover:text-white transition-colors flex justify-center">
-                            <UserPlus size={20} />
-                        </div>
-                        <span className="text-sm font-medium text-zinc-300 group-hover:text-white">Add another account</span>
-                    </button>
-
                     <form action={async () => {
                         "use server";
                         await signOut({ redirectTo: "/login" });
                     }} className="w-full block">
-                        <button className="w-full flex items-center gap-4 px-8 py-5 hover:bg-zinc-800/50 transition-colors text-left group border-t border-zinc-800/50">
+                        <button className="w-full flex items-center gap-4 px-8 py-5 hover:bg-zinc-800/50 transition-colors text-left group">
                             <div className="w-6 text-zinc-400 group-hover:text-white transition-colors flex justify-center">
                                 <LogOut size={20} />
                             </div>

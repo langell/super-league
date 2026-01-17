@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import { updateMember, removeMemberFromLeague } from "@/actions/member";
 import { notFound } from "next/navigation";
+import { PhoneInput } from "@/components/PhoneInput";
 
 const ICON_SIZE_SMALL = 16;
 const ICON_SIZE_MEDIUM = 20;
@@ -95,12 +96,7 @@ export default async function EditMemberPage({ params }: { params: Promise<{ slu
 
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-zinc-500 uppercase">Phone Number</label>
-                            <input
-                                name="phone"
-                                type="tel"
-                                defaultValue={member.phone || ""}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors"
-                            />
+                            <PhoneInput defaultValue={member.phone || ""} name="phone" />
                         </div>
 
                         <div className="space-y-2">
@@ -142,10 +138,18 @@ export default async function EditMemberPage({ params }: { params: Promise<{ slu
                             </div>
                         </div>
 
-                        <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-2xl shadow-xl shadow-emerald-500/10 transition-all flex justify-center gap-2 items-center">
-                            <Save size={ICON_SIZE_MEDIUM} />
-                            Save Changes
-                        </button>
+                        <div className="flex gap-3 pt-4">
+                            <Link
+                                href={`/dashboard/${slug}/members`}
+                                className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-2xl border border-zinc-700 transition-colors flex justify-center items-center"
+                            >
+                                Cancel
+                            </Link>
+                            <button type="submit" className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-2xl shadow-xl shadow-emerald-500/10 transition-all flex justify-center gap-2 items-center">
+                                <Save size={ICON_SIZE_MEDIUM} />
+                                Save Changes
+                            </button>
+                        </div>
                     </form>
 
                     <div className="pt-8 border-t border-zinc-800">

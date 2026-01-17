@@ -39,7 +39,7 @@ export default async function DashboardLayout({
 
     return (
         <div className="flex flex-col h-screen bg-background text-white font-sans overflow-hidden">
-            <DashboardHeader user={headerUser} />
+            <DashboardHeader user={headerUser} slug={slug} />
 
             <div className="flex flex-1 overflow-hidden">
                 <DashboardSidebar slug={slug} leagueName={league.name} />

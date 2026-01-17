@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, User, Settings, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { signOutAction } from "@/actions/auth";
 
 interface UserNavProps {
@@ -14,9 +14,10 @@ interface UserNavProps {
         firstName?: string | null;
         lastName?: string | null;
     };
+    slug?: string;
 }
 
-export function UserNav({ user }: UserNavProps) {
+export function UserNav({ user, slug }: UserNavProps) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +35,31 @@ export function UserNav({ user }: UserNavProps) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // If we have a league slug, the avatar becomes a direct link to the Profile Page.
+    if (slug) {
+        return (
+            <Link
+                href={`/dashboard/${slug}/profile`}
+                className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-zinc-800 text-left group"
+            >
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 flex items-center justify-center font-bold text-sm relative overflow-hidden group-hover:border-emerald-500/50 transition-colors">
+                    {user.image ? (
+                        <Image src={user.image} alt={displayName} fill className="object-cover" />
+                    ) : (
+                        <span>{initials}</span>
+                    )}
+                </div>
+                <div className="hidden md:block text-left">
+                    <p className="text-xs font-medium text-zinc-300 group-hover:text-white transition-colors leading-none">{displayName}</p>
+                    <p className="text-[10px] text-zinc-500 leading-none mt-1 truncate max-w-[120px]">
+                        {user.email}
+                    </p>
+                </div>
+            </Link>
+        );
+    }
+
+    // Fallback for non-league pages (e.g. root dashboard): Keep dropdown for Sign Out.
     return (
         <div className="relative" ref={dropdownRef}>
             <button
@@ -61,28 +87,6 @@ export function UserNav({ user }: UserNavProps) {
                     <div className="p-4 border-b border-zinc-800/50">
                         <p className="text-sm font-medium text-white">{displayName}</p>
                         <p className="text-xs text-zinc-500 truncate">{user.email}</p>
-                    </div>
-
-                    <div className="p-1">
-                        {/* 
-                            Note: Since we don't have a global dashboard profile page yet,
-                            we can link to the first league profile if available, 
-                            OR simply link to a general settings/profile placeholder.
-                            For now, assuming context needs to be handled or we link to dashboard root or a standard page.
-                        */}
-                        {/* <Link
-                            href="/dashboard/profile"
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-                            onClick={() => setIsOpen(false)}
-                        >
-                            <User size={16} />
-                            Your Profile
-                        </Link> */}
-                        {/* 
-                         Since we need a specific slug for /dashboard/[slug]/profile,
-                         we might omit the link or require logic to find their "primary" league.
-                         For now, let's keep it simple with Sign Out.
-                        */}
                     </div>
 
                     <div className="p-1 border-t border-zinc-800/50">

@@ -10,9 +10,10 @@ interface DashboardHeaderProps {
         firstName?: string | null;
         lastName?: string | null;
     };
+    slug?: string;
 }
 
-export function DashboardHeader({ user }: DashboardHeaderProps) {
+export function DashboardHeader({ user, slug }: DashboardHeaderProps) {
     return (
         <nav className="border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-50">
             <div className="w-full px-6 h-16 flex items-center justify-between">
@@ -21,7 +22,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                     <span className="font-bold text-xl tracking-tight text-white">Leaguely</span>
                 </Link>
                 <div className="flex items-center gap-4">
-                    <UserNav user={user} />
+                    <UserNav user={user} slug={slug} />
                 </div>
             </div>
         </nav>

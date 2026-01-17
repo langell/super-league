@@ -2,8 +2,7 @@ import { auth, signOut } from "@/auth";
 import { db } from "@/db";
 import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { LogOut, Camera, Home } from "lucide-react";
-import Image from "next/image";
+import { LogOut, Home } from "lucide-react";
 import Link from "next/link";
 import { updateUserProfile } from "@/actions/user";
 import { ProfileForm } from "@/components/ProfileForm";
@@ -16,53 +15,24 @@ export default async function ProfilePage({ params }: { params: { slug: string }
 
     if (!userInfo) return <div>User not found</div>;
 
-    const displayName = userInfo.firstName || userInfo.name || "Golfer";
-    const initials = (userInfo.firstName?.[0] || "") + (userInfo.lastName?.[0] || displayName?.[0] || "?");
-
     return (
         <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
             {/* Google-Style Profile Card */}
-            <div className="w-full max-w-[400px] bg-[#1e1e1e] rounded-[28px] overflow-hidden shadow-2xl border border-zinc-800/50">
+            <div className="w-full max-w-2xl bg-[#1e1e1e] rounded-[28px] overflow-hidden shadow-2xl border border-zinc-800/50">
 
-                {/* Header (Email) */}
-                <div className="pt-8 pb-1 text-center text-sm font-medium text-zinc-400">
-                    {userInfo.email}
-                </div>
-
-                {/* Avatar Section */}
-                <div className="flex flex-col items-center py-6">
-                    <div className="relative group cursor-pointer mb-4">
-                        <div className="w-28 h-28 rounded-full bg-zinc-700 border-[3px] border-[#1e1e1e] ring-2 ring-zinc-700/50 overflow-hidden relative flex items-center justify-center text-3xl font-bold text-zinc-300">
-                            {userInfo.image ? (
-                                <Image src={userInfo.image} alt="Profile" fill className="object-cover" />
-                            ) : (
-                                <span>{initials}</span>
-                            )}
-                        </div>
-                        {/* Camera Icon Badge */}
-                        <div className="absolute bottom-1 right-1 bg-zinc-800 p-2 rounded-full border border-[#1e1e1e] text-white shadow-lg group-hover:bg-zinc-700 transition-colors">
-                            <Camera size={16} />
-                        </div>
-                    </div>
-
-                    <h1 className="text-[22px] font-normal text-white">Hi, {displayName}!</h1>
-                </div>
-
-                {/* Profile Edit Form */}
-                <div className="border-t border-zinc-800">
-                    <ProfileForm
-                        user={{
-                            id: userInfo.id,
-                            firstName: userInfo.firstName,
-                            lastName: userInfo.lastName,
-                            email: userInfo.email,
-                            phone: userInfo.phone,
-                            ghinId: userInfo.ghinId,
-                            venmoHandle: userInfo.venmoHandle,
-                        }}
-                        action={updateUserProfile}
-                    />
-                </div>
+                <ProfileForm
+                    user={{
+                        id: userInfo.id,
+                        firstName: userInfo.firstName,
+                        lastName: userInfo.lastName,
+                        email: userInfo.email,
+                        phone: userInfo.phone,
+                        image: userInfo.image,
+                        notificationPreference: userInfo.notificationPreference,
+                    }}
+                    leagueSlug={params.slug}
+                    action={updateUserProfile}
+                />
 
                 {/* Sign Out */}
                 <div className="border-t border-zinc-800">

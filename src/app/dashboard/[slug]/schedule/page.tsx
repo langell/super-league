@@ -49,7 +49,7 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
     }
 
     return (
-        <div className="max-w-7xl mx-auto py-12 px-8">
+        <div className="w-full py-12 px-8">
             <div className="flex justify-between items-end mb-12">
                 <div>
                     <h1 className="text-4xl font-bold mb-2">Schedule</h1>

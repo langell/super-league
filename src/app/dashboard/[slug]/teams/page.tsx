@@ -37,7 +37,7 @@ export default async function TeamsPage({ params }: { params: Promise<{ slug: st
     }));
 
     return (
-        <div className="max-w-7xl mx-auto py-12 px-8">
+        <div className="w-full py-12 px-8">
             <div className="flex justify-between items-end mb-12">
                 <div>
                     <h1 className="text-4xl font-bold mb-2">Teams</h1>

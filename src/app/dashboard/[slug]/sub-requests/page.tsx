@@ -43,7 +43,7 @@ export default async function SubRequestsPage({ params }: { params: Promise<{ sl
         .orderBy(desc(subRequests.createdAt));
 
     return (
-        <div className="max-w-4xl mx-auto py-12 px-8">
+        <div className="w-full py-12 px-8">
             <h1 className="text-3xl font-bold mb-2">Sub Requests</h1>
             <p className="text-zinc-400 mb-8">Roster openings available for claim.</p>
 

@@ -1,10 +1,12 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
-import Resend from "next-auth/providers/resend";
 import Facebook from "next-auth/providers/facebook";
 
 export const authConfig = {
+    pages: {
+        signIn: "/login",
+    },
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -18,10 +20,7 @@ export const authConfig = {
             clientId: process.env.FACEBOOK_CLIENT_ID,
             clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
         }),
-        Resend({
-            apiKey: process.env.RESEND_API_KEY,
-            from: process.env.EMAIL_FROM || "onboarding@resend.dev",
-        }),
+
     ],
     callbacks: {
         jwt({ token, user }) {
@@ -39,10 +38,13 @@ export const authConfig = {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
             const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+            const isOnAuth = nextUrl.pathname.startsWith('/login');
 
             if (isOnDashboard) {
                 if (isLoggedIn) return true;
                 return false; // Redirect unauthenticated users to login page
+            } else if (isLoggedIn && isOnAuth) {
+                return Response.redirect(new URL('/dashboard', nextUrl));
             }
             return true;
         },

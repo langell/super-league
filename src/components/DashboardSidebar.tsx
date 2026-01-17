@@ -39,7 +39,7 @@ export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
     };
 
     return (
-        <aside className="w-64 flex-shrink-0 border-r border-zinc-900 bg-zinc-950 flex flex-col h-screen sticky top-0">
+        <aside className="w-64 flex-shrink-0 border-r border-zinc-900 bg-zinc-950 flex flex-col h-full">
             {/* League Header */}
             <div className="h-20 flex items-center px-6 border-b border-zinc-900">
                 <div className="flex items-center gap-3">

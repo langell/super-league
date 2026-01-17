@@ -1,10 +1,11 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { leagueMembers, organizations } from "@/db/schema";
+import { leagueMembers, organizations, user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Trophy, Plus, ArrowRight } from "lucide-react";
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 const ICON_SIZE_MEDIUM = 24;
 const ICON_SIZE_SMALL = 20;
@@ -28,19 +29,12 @@ export default async function DashboardPage() {
         .innerJoin(organizations, eq(leagueMembers.organizationId, organizations.id))
         .where(eq(leagueMembers.userId, session.user.id ?? ""));
 
+    // Fetch user details for header
+    const [userInfo] = await db.select().from(user).where(eq(user.id, session.user.id ?? "")).limit(1);
+
     return (
         <div className="min-h-screen bg-background text-white">
-            <nav className="border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Trophy className="text-emerald-500" size={ICON_SIZE_MEDIUM} />
-                        <span className="font-bold text-xl tracking-tight">Leaguely</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-zinc-400">{session.user.email}</span>
-                    </div>
-                </div>
-            </nav>
+            <DashboardHeader user={userInfo || session.user} />
 
             <main className="max-w-7xl mx-auto px-6 py-12">
                 <div className="flex justify-between items-end mb-12">

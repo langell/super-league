@@ -160,8 +160,7 @@ export default async function LeagueAdminDashboard({ params }: { params: Promise
 
             let statusText = "AS";
             let leadingTeam: 'A' | 'B' | 'AS' = 'AS';
-            const nameA = teamA.players.values().next().value?.name?.split(' ')[0] || "Team A";
-            const nameB = teamB.players.values().next().value?.name?.split(' ')[0] || "Team B";
+
 
             if (holesWonA > holesWonB) {
                 statusText = `${holesWonA - holesWonB} UP`;

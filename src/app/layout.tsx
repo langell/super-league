@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Super League | The Premium Golf League Engine",
+  title: "Leaguely | The Premium Golf League Engine",
   description: "Enterprise-class platform for managing golf leagues, WHS handicapping, and match play.",
 };
 

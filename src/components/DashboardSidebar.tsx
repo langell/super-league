@@ -10,7 +10,8 @@ import {
     MapPin,
     Settings,
     LogOut,
-    Trophy
+    Trophy,
+    UserCheck
 } from "lucide-react";
 
 interface DashboardSidebarProps {
@@ -24,6 +25,7 @@ export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
     const navItems = [
         { name: "Dashboard", href: `/dashboard/${slug}`, icon: LayoutGrid, exact: true },
         { name: "Schedule", href: `/dashboard/${slug}/schedule`, icon: Calendar, exact: false },
+        { name: "Sub Requests", href: `/dashboard/${slug}/sub-requests`, icon: UserCheck, exact: false },
         { name: "Leaderboard", href: `/dashboard/${slug}/leaderboard`, icon: Trophy, exact: false },
         { name: "Members", href: `/dashboard/${slug}/members`, icon: Users, exact: false },
         { name: "Teams", href: `/dashboard/${slug}/teams`, icon: Flag, exact: false },
@@ -76,9 +78,9 @@ export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
 
             {/* Footer / User Profile stub */}
             <div className="p-4 border-t border-zinc-900">
-                <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-zinc-500 hover:text-white hover:bg-zinc-900 transition-all">
-                    <LogOut size={18} />
-                    Exit League
+                <Link href={`/dashboard/${slug}/profile`} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-zinc-500 hover:text-white hover:bg-zinc-900 transition-all">
+                    <UserCheck size={18} />
+                    My Profile
                 </Link>
             </div>
         </aside>

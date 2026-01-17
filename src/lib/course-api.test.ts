@@ -21,6 +21,16 @@ describe('course-api', () => {
             expect(details?.name).toBe('Augusta National');
             expect(details?.tees.length).toBeGreaterThan(0);
         });
+
+        it('returns generic Mock Course for unknown mock ID', async () => {
+            const details = await getCourseDetails('mock-unknown');
+            expect(details?.name).toBe('Mock Course');
+        });
+
+        it('returns proper name for mock-2', async () => {
+            const details = await getCourseDetails('mock-2');
+            expect(details?.name).toBe('Pebble Beach');
+        });
     });
 
     describe('real API mode (with API key)', () => {
@@ -47,6 +57,15 @@ describe('course-api', () => {
             expect(fetch).toHaveBeenCalledWith(expect.stringContaining('api.golfapi.io/clubs?q=test'), expect.any(Object));
             expect(results[0].courseID).toBe('api-1');
             expect(results[0].courseName).toBe('API Course');
+        });
+
+        it('returns empty array when searchCourses API call fails', async () => {
+            vi.mocked(fetch).mockResolvedValueOnce({
+                ok: false
+            } as Response);
+
+            const results = await searchCourses('test');
+            expect(results).toEqual([]);
         });
 
         it('calls the API for getCourseDetails and returns transformed data', async () => {
@@ -77,6 +96,47 @@ describe('course-api', () => {
             expect(details?.tees[0].name).toBe('Blue');
             expect(details?.tees[0].holes[0].par).toBe(4);
             expect(details?.tees[0].holes[0].yardage).toBe(400);
+        });
+
+        it('handles missing tees in API response', async () => {
+            vi.mocked(fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    courseID: 'api-2',
+                    courseName: 'No Tee Course',
+                    state: 'NA',
+                    city: 'Void'
+                })
+            } as Response);
+
+            const details = await getCourseDetails('api-2');
+            expect(details?.tees).toEqual([]);
+        });
+
+        it('handles missing parMen/parsMen/indexesMen in API response', async () => {
+            const mockApiResponse = {
+                courseID: 'api-3',
+                courseName: 'Partial Data Course',
+                city: 'API City',
+                state: 'AS',
+                tees: [{
+                    teeName: 'Blue',
+                    courseRatingMen: '72.0',
+                    slopeMen: '125',
+                    // parMen missing, should default
+                }]
+                // parsMen and indexesMen missing, should default
+            };
+
+            vi.mocked(fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockApiResponse
+            } as Response);
+
+            const details = await getCourseDetails('api-3');
+            expect(details?.tees[0].par).toBe(72); // Default par
+            expect(details?.tees[0].holes[0].par).toBe(4); // Default hole par
+            expect(details?.tees[0].holes[0].handicapIndex).toBe(1); // Default index
         });
 
         it('returns null when API call fails', async () => {

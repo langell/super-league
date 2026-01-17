@@ -207,6 +207,22 @@ export const matchPlayers = pgTable("match_players", {
     startingHandicap: decimal("starting_handicap", { precision: 4, scale: 1 }),
 });
 
+// Sub Requests
+export const subRequests = pgTable("sub_requests", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    matchPlayerId: uuid("match_player_id")
+        .references(() => matchPlayers.id, { onDelete: "cascade" })
+        .notNull(),
+    requestedByUserId: uuid("requested_by_user_id")
+        .references(() => user.id)
+        .notNull(),
+    status: varchar("status", { length: 20 }).default("open").notNull(), // open, filled, cancelled
+    filledByUserId: uuid("filled_by_user_id").references(() => user.id),
+    note: text("note"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Hole-by-hole scores
 export const scores = pgTable("scores", {
     id: uuid("id").primaryKey().defaultRandom(),

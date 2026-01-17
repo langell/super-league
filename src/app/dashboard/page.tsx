@@ -34,7 +34,7 @@ export default async function DashboardPage() {
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Trophy className="text-emerald-500" size={ICON_SIZE_MEDIUM} />
-                        <span className="font-bold text-xl tracking-tight">Super League</span>
+                        <span className="font-bold text-xl tracking-tight">Leaguely</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-zinc-400">{session.user.email}</span>
@@ -91,7 +91,7 @@ function LeagueCard({ league }: { league: League }) {
                 </div>
             </div>
             <h3 className="text-2xl font-bold mb-1">{league.name}</h3>
-            <p className="text-zinc-500 text-sm mb-8">super-league.gg/{league.slug}</p>
+            <p className="text-zinc-500 text-sm mb-8">leaguely.gg/{league.slug}</p>
             <Link
                 href={`/dashboard/${league.slug}`}
                 className="flex items-center justify-between pt-6 border-t border-zinc-800/50 group-hover:text-emerald-400 transition-all"

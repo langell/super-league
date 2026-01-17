@@ -1,15 +1,19 @@
 import { getLeagueAdmin } from "@/lib/auth-utils";
 import { db } from "@/db";
-import { rounds, courses, matches, matchPlayers, leagueMembers, user, teams, teamMembers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { rounds, courses, matches, matchPlayers, leagueMembers, user, teams, teamMembers, subRequests } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Calendar, Plus, Users, Trash2 } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Plus, Users, Trash2, UserPlus, UserMinus, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { createMatch, deleteMatch } from "@/actions/match";
+import { createSubRequest, cancelSubRequest } from "@/actions/sub-request"; // Ensure this action file exists now
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 
 export default async function RoundDetailPage({ params }: { params: Promise<{ slug: string; seasonId: string; roundId: string }> }) {
     const { slug, seasonId, roundId } = await params;
+    const session = await auth();
+    const currentUserId = session?.user?.id;
     const league = await getLeagueAdmin(slug);
 
     // 1. Fetch Round Details
@@ -56,6 +60,13 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
             players
         };
     }));
+
+    // Fetch Sub Requests
+    const allMatchPlayerIds = matchesWithPlayers.flatMap(m => m.players.map(p => p.id));
+    const requests = allMatchPlayerIds.length > 0
+        ? await db.select().from(subRequests).where(inArray(subRequests.matchPlayerId, allMatchPlayerIds))
+        : [];
+    const requestMap = new Map(requests.map(r => [r.matchPlayerId, r]));
 
     // 4. Get all Teams
     const teamsList = await db.select().from(teams).where(eq(teams.organizationId, league.id));
@@ -180,23 +191,52 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
                                             <div className="text-left">
                                                 <h4 className="text-lg font-bold text-white mb-3 truncate">{teamAName}</h4>
                                                 <div className="space-y-3">
-                                                    {teamAPlayers.map(p => (
-                                                        <div key={p.id} className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex flex-shrink-0 items-center justify-center text-zinc-500 font-bold overflow-hidden relative text-xs">
-                                                                {p.image ? (
-                                                                    <Image src={p.image} alt="" fill className="object-cover" />
-                                                                ) : (
-                                                                    p.firstName?.[0] || "?"
+                                                    {teamAPlayers.map(p => {
+                                                        const request = requestMap.get(p.id);
+                                                        const isMe = currentUserId === p.userId;
+                                                        const hasOpenRequest = request && request.status === 'open';
+
+                                                        return (
+                                                            <div key={p.id} className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex flex-shrink-0 items-center justify-center text-zinc-500 font-bold overflow-hidden relative text-xs">
+                                                                    {p.image ? (
+                                                                        <Image src={p.image} alt="" fill className="object-cover" />
+                                                                    ) : (
+                                                                        p.firstName?.[0] || "?"
+                                                                    )}
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-bold text-zinc-200 truncate">
+                                                                        {p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : p.username}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-zinc-500 font-mono">PHCP: {p.startingHandicap}</p>
+                                                                </div>
+                                                                {isMe && (
+                                                                    <div className="ml-auto pl-2">
+                                                                        {hasOpenRequest ? (
+                                                                            <form action={cancelSubRequest}>
+                                                                                <input type="hidden" name="leagueSlug" value={slug} />
+                                                                                <input type="hidden" name="requestId" value={request.id} />
+                                                                                <button title="Cancel Request" className="text-red-500 hover:bg-red-500/10 p-1.5 rounded-full transition-colors"><UserMinus size={14} /></button>
+                                                                            </form>
+                                                                        ) : (
+                                                                            <form action={createSubRequest}>
+                                                                                <input type="hidden" name="matchId" value={match.id} />
+                                                                                <input type="hidden" name="leagueSlug" value={slug} />
+                                                                                <input type="hidden" name="note" value="Requesting a sub." />
+                                                                                <button title="Request Sub" className="text-zinc-600 hover:text-emerald-500 hover:bg-emerald-500/10 p-1.5 rounded-full transition-colors"><UserPlus size={14} /></button>
+                                                                            </form>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                                {!isMe && hasOpenRequest && (
+                                                                    <div className="ml-auto pl-2 text-yellow-500" title="Sub Requested">
+                                                                        <AlertCircle size={14} />
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-bold text-zinc-200 truncate">
-                                                                    {p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : p.username}
-                                                                </p>
-                                                                <p className="text-[10px] text-zinc-500 font-mono">PHCP: {p.startingHandicap}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
 
@@ -211,23 +251,52 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
                                             <div className="text-right">
                                                 <h4 className="text-lg font-bold text-white mb-3 truncate">{teamBName}</h4>
                                                 <div className="space-y-3 flex flex-col items-end">
-                                                    {teamBPlayers.map(p => (
-                                                        <div key={p.id} className="flex items-center gap-3 flex-row-reverse text-right">
-                                                            <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex flex-shrink-0 items-center justify-center text-zinc-500 font-bold overflow-hidden relative text-xs">
-                                                                {p.image ? (
-                                                                    <Image src={p.image} alt="" fill className="object-cover" />
-                                                                ) : (
-                                                                    p.firstName?.[0] || "?"
+                                                    {teamBPlayers.map(p => {
+                                                        const request = requestMap.get(p.id);
+                                                        const isMe = currentUserId === p.userId;
+                                                        const hasOpenRequest = request && request.status === 'open';
+
+                                                        return (
+                                                            <div key={p.id} className="flex items-center gap-3 flex-row-reverse text-right">
+                                                                <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex flex-shrink-0 items-center justify-center text-zinc-500 font-bold overflow-hidden relative text-xs">
+                                                                    {p.image ? (
+                                                                        <Image src={p.image} alt="" fill className="object-cover" />
+                                                                    ) : (
+                                                                        p.firstName?.[0] || "?"
+                                                                    )}
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-bold text-zinc-200 truncate">
+                                                                        {p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : p.username}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-zinc-500 font-mono">PHCP: {p.startingHandicap}</p>
+                                                                </div>
+                                                                {isMe && (
+                                                                    <div className="mr-auto pr-2">
+                                                                        {hasOpenRequest ? (
+                                                                            <form action={cancelSubRequest}>
+                                                                                <input type="hidden" name="leagueSlug" value={slug} />
+                                                                                <input type="hidden" name="requestId" value={request.id} />
+                                                                                <button title="Cancel Request" className="text-red-500 hover:bg-red-500/10 p-1.5 rounded-full transition-colors"><UserMinus size={14} /></button>
+                                                                            </form>
+                                                                        ) : (
+                                                                            <form action={createSubRequest}>
+                                                                                <input type="hidden" name="matchId" value={match.id} />
+                                                                                <input type="hidden" name="leagueSlug" value={slug} />
+                                                                                <input type="hidden" name="note" value="Requesting a sub." />
+                                                                                <button title="Request Sub" className="text-zinc-600 hover:text-emerald-500 hover:bg-emerald-500/10 p-1.5 rounded-full transition-colors"><UserPlus size={14} /></button>
+                                                                            </form>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                                {!isMe && hasOpenRequest && (
+                                                                    <div className="mr-auto pr-2 text-yellow-500" title="Sub Requested">
+                                                                        <AlertCircle size={14} />
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-bold text-zinc-200 truncate">
-                                                                    {p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : p.username}
-                                                                </p>
-                                                                <p className="text-[10px] text-zinc-500 font-mono">PHCP: {p.startingHandicap}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         </div>

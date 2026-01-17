@@ -1,4 +1,4 @@
-import { auth, signIn, signOut } from "@/auth";
+import { auth, signOut } from "@/auth";
 import Link from "next/link";
 import { Trophy, Users, Calendar, Activity, LayoutDashboard, Database, Shield, LogIn, LogOut } from "lucide-react";
 
@@ -35,11 +35,11 @@ export default async function Home() {
                 </form>
               </div>
             ) : (
-              <form action={async () => { "use server"; await signIn("google", { redirectTo: "/dashboard" }); }}>
+              <Link href="/login">
                 <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-sm transition-all">
                   <LogIn size={ICON_SIZE_SMALL} /> Sign In
                 </button>
-              </form>
+              </Link>
             )}
           </div>
 
@@ -62,11 +62,11 @@ export default async function Home() {
                 Enter Dashboard
               </Link>
             ) : (
-              <form action={async () => { "use server"; await signIn("google", { redirectTo: "/dashboard" }); }}>
+              <Link href="/login">
                 <button className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                   Get Started Now
                 </button>
-              </form>
+              </Link>
             )}
             <button className="px-8 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white font-semibold rounded-xl transition-all">
               View Schema Design

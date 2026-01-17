@@ -123,8 +123,11 @@ describe('Scores API', () => {
                 body: JSON.stringify(validPayload),
             });
 
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
             const response = await POST(req);
             expect(response.status).toBe(500);
+            expect(consoleSpy).toHaveBeenCalled();
+            consoleSpy.mockRestore();
         });
     });
 });

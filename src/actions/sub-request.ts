@@ -19,6 +19,8 @@ export async function createSubRequest(formData: FormData) {
     if (!matchId) throw new Error("Match Selection is required");
     if (subIds.length === 0) throw new Error("At least one sub must be selected");
 
+    const currentUserId = session.user.id;
+
     // Find the player's slot in this match and organization ID
     const rows = await db
         .select({
@@ -34,7 +36,7 @@ export async function createSubRequest(formData: FormData) {
         .where(
             and(
                 eq(matchPlayers.matchId, matchId),
-                eq(matchPlayers.userId, session.user.id)
+                eq(matchPlayers.userId, currentUserId)
             )
         )
         .limit(1);
@@ -42,8 +44,6 @@ export async function createSubRequest(formData: FormData) {
     const playerSlot = rows[0];
 
     if (!playerSlot) throw new Error("Match participation not found");
-
-    const currentUserId = session.user.id;
 
     await db.transaction(async (tx) => {
         // 1. Create Request
@@ -119,7 +119,7 @@ export async function acceptSubRequest(formData: FormData) {
 
         // 2. Put the sub in the match
         await tx.update(matchPlayers)
-            .set({ userId: session.user?.id })
+            .set({ userId: currentUserId })
             .where(eq(matchPlayers.id, request.matchPlayerId));
     });
 

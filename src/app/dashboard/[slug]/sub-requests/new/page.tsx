@@ -8,7 +8,8 @@ import { createSubRequest } from "@/actions/sub-request";
 
 export default async function NewSubRequestPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await auth();
-    if (!session?.user) return redirect("/login");
+    if (!session?.user?.id) return redirect("/login");
+    const userId = session.user.id;
 
     const { slug } = await params;
     const [league] = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
@@ -31,7 +32,7 @@ export default async function NewSubRequestPage({ params }: { params: Promise<{ 
         .leftJoin(courses, eq(rounds.courseId, courses.id))
         .where(
             and(
-                eq(matchPlayers.userId, session.user.id),
+                eq(matchPlayers.userId, userId),
                 eq(seasons.organizationId, league.id),
                 gt(rounds.date, new Date()) // Future matches only
             )
@@ -45,7 +46,7 @@ export default async function NewSubRequestPage({ params }: { params: Promise<{ 
         .from(subRequests)
         .where(
             and(
-                eq(subRequests.requestedByUserId, session.user.id),
+                eq(subRequests.requestedByUserId, userId),
                 eq(subRequests.status, "open")
             )
         );
@@ -69,7 +70,7 @@ export default async function NewSubRequestPage({ params }: { params: Promise<{ 
         .leftJoin(courses, eq(rounds.courseId, courses.id))
         .where(
             and(
-                eq(matchPlayers.userId, session.user.id),
+                eq(matchPlayers.userId, userId),
                 eq(seasons.organizationId, league.id),
                 gt(rounds.date, new Date())
             )

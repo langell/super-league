@@ -1,4 +1,4 @@
-import { getLeagueAdmin } from "@/lib/auth-utils";
+import { getLeagueMember } from "@/lib/auth-utils";
 import { db } from "@/db";
 import { rounds, courses, matches, matchPlayers, leagueMembers, user, teams, teamMembers, subRequests } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
@@ -14,7 +14,8 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
     const { slug, seasonId, roundId } = await params;
     const session = await auth();
     const currentUserId = session?.user?.id;
-    const league = await getLeagueAdmin(slug);
+    const league = await getLeagueMember(slug);
+    const isAdmin = league.role === "admin";
 
     // 1. Fetch Round Details
     const [round] = await db
@@ -117,17 +118,19 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
                     </div>
                 </div>
 
-                <Link
-                    href={`/dashboard/${slug}/schedule/${seasonId}/rounds/${roundId}/edit`}
-                    className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-colors"
-                >
-                    Edit Round
-                </Link>
+                {isAdmin && (
+                    <Link
+                        href={`/dashboard/${slug}/schedule/${seasonId}/rounds/${roundId}/edit`}
+                        className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-colors"
+                    >
+                        Edit Round
+                    </Link>
+                )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className={`grid grid-cols-1 ${isAdmin ? 'lg:grid-cols-3' : ''} gap-12`}>
                 {/* Matches List */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className={isAdmin ? "lg:col-span-2 space-y-6" : "w-full space-y-6"}>
                     <h3 className="text-xl font-bold mb-4">Pairings & Matches (Team vs Team)</h3>
 
                     {matchesWithPlayers.length === 0 ? (
@@ -177,13 +180,15 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
                                                     </Link>
                                                 )}
                                             </div>
-                                            <form action={deleteMatch}>
-                                                <input type="hidden" name="leagueSlug" value={slug} />
-                                                <input type="hidden" name="matchId" value={match.id} />
-                                                <button className="text-zinc-600 hover:text-red-500 transition-colors p-1">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </form>
+                                            {isAdmin && (
+                                                <form action={deleteMatch}>
+                                                    <input type="hidden" name="leagueSlug" value={slug} />
+                                                    <input type="hidden" name="matchId" value={match.id} />
+                                                    <button className="text-zinc-600 hover:text-red-500 transition-colors p-1">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </form>
+                                            )}
                                         </div>
 
                                         <div className="p-6 grid grid-cols-[1fr_auto_1fr] gap-6 items-center">
@@ -307,55 +312,56 @@ export default async function RoundDetailPage({ params }: { params: Promise<{ sl
                     )}
                 </div>
 
-                {/* Create Match Sidebar */}
-                <div>
-                    <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-3xl sticky top-8">
-                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                            <Plus size={20} className="text-emerald-500" />
-                            Create Team Match
-                        </h3>
-                        <form action={createMatch} className="space-y-4">
-                            <input type="hidden" name="leagueSlug" value={slug} />
-                            <input type="hidden" name="roundId" value={roundId} />
+                {isAdmin && (
+                    <div>
+                        <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-3xl sticky top-8">
+                            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                <Plus size={20} className="text-emerald-500" />
+                                Create Team Match
+                            </h3>
+                            <form action={createMatch} className="space-y-4">
+                                <input type="hidden" name="leagueSlug" value={slug} />
+                                <input type="hidden" name="roundId" value={roundId} />
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-zinc-500 uppercase">Team 1</label>
-                                <select
-                                    name="team1Id"
-                                    required
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors appearance-none"
-                                >
-                                    <option value="">Select Team...</option>
-                                    {freeTeams.map(t => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase">Team 1</label>
+                                    <select
+                                        name="team1Id"
+                                        required
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors appearance-none"
+                                    >
+                                        <option value="">Select Team...</option>
+                                        {freeTeams.map(t => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-zinc-500 uppercase">Team 2</label>
-                                <select
-                                    name="team2Id"
-                                    required
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors appearance-none"
-                                >
-                                    <option value="">Select Team...</option>
-                                    {freeTeams.map(t => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase">Team 2</label>
+                                    <select
+                                        name="team2Id"
+                                        required
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500 transition-colors appearance-none"
+                                    >
+                                        <option value="">Select Team...</option>
+                                        {freeTeams.map(t => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-2xl shadow-xl shadow-emerald-500/10 transition-all mt-4">
-                                Create Pairing
-                            </button>
-                        </form>
+                                <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-2xl shadow-xl shadow-emerald-500/10 transition-all mt-4">
+                                    Create Pairing
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

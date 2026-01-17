@@ -1,4 +1,4 @@
-import { getLeagueAdmin } from "@/lib/auth-utils";
+import { getLeagueMember } from "@/lib/auth-utils";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { auth } from "@/auth";
@@ -17,13 +17,13 @@ export default async function DashboardLayout({
 
     // Get session/user for header
     const session = await auth();
-    // getLeagueAdmin likely checks session internally or assumes valid session, 
+    // getLeagueMember likely checks session internally or assumes valid session, 
     // but we need the user object for the header.
-    // Ideally getLeagueAdmin could return the user too, but let's fetch it explicitly or default to session.user logic.
+    // Ideally getLeagueMember could return the user too, but let's fetch it explicitly or default to session.user logic.
 
     // Re-fetching user to be consistent with main dashboard logic (getting latest image/name)
-    // Note: getLeagueAdmin will throw if not authed/authorized, so we are safe to proceed if it passes.
-    const league = await getLeagueAdmin(slug);
+    // Note: getLeagueMember will throw if not authed/authorized, so we are safe to proceed if it passes.
+    const league = await getLeagueMember(slug);
 
     let userInfo = session?.user;
     if (session?.user?.id) {
@@ -42,7 +42,7 @@ export default async function DashboardLayout({
             <DashboardHeader user={headerUser} slug={slug} />
 
             <div className="flex flex-1 overflow-hidden">
-                <DashboardSidebar slug={slug} leagueName={league.name} />
+                <DashboardSidebar slug={slug} leagueName={league.name} role={league.role} />
 
                 <main className="flex-1 overflow-y-auto">
                     {/* 

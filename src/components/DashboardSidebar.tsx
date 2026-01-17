@@ -17,10 +17,12 @@ import {
 interface DashboardSidebarProps {
     slug: string;
     leagueName: string;
+    role: string | null;
 }
 
-export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
+export function DashboardSidebar({ slug, leagueName, role }: DashboardSidebarProps) {
     const pathname = usePathname();
+    const isAdmin = role === "admin";
 
     const navItems = [
         { name: "Dashboard", href: `/dashboard/${slug}`, icon: LayoutGrid, exact: true },
@@ -29,9 +31,14 @@ export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
         { name: "Leaderboard", href: `/dashboard/${slug}/leaderboard`, icon: Trophy, exact: false },
         { name: "Members", href: `/dashboard/${slug}/members`, icon: Users, exact: false },
         { name: "Teams", href: `/dashboard/${slug}/teams`, icon: Flag, exact: false },
-        { name: "Courses", href: `/dashboard/${slug}/courses`, icon: MapPin, exact: false },
-        { name: "Settings", href: `/dashboard/${slug}/settings`, icon: Settings, exact: false },
     ];
+
+    if (isAdmin) {
+        navItems.push(
+            { name: "Courses", href: `/dashboard/${slug}/courses`, icon: MapPin, exact: false },
+            { name: "Settings", href: `/dashboard/${slug}/settings`, icon: Settings, exact: false },
+        );
+    }
 
     const isActive = (href: string, exact: boolean) => {
         if (exact) return pathname === href;
@@ -48,7 +55,9 @@ export function DashboardSidebar({ slug, leagueName }: DashboardSidebarProps) {
                     </div>
                     <div className="overflow-hidden">
                         <h1 className="font-bold text-sm truncate">{leagueName}</h1>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Admin Console</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
+                            {role === "admin" ? "Admin Console" : role === "sub" ? "Sub Console" : "Member Console"}
+                        </p>
                     </div>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { getLeagueAdmin } from "@/lib/auth-utils";
+import { getLeagueMember } from "@/lib/auth-utils";
 import { db } from "@/db";
 import { matches, matchPlayers, user, rounds, courses, scores, holes, tees, leagueMembers } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
@@ -10,7 +10,7 @@ import { saveScorecard } from "@/actions/score";
 
 export default async function MatchScorecardPage({ params }: { params: Promise<{ slug: string; matchId: string }> }) {
     const { slug, matchId } = await params;
-    const league = await getLeagueAdmin(slug);
+    const league = await getLeagueMember(slug);
 
     // 1. Fetch Match & Round Details
     const [match] = await db

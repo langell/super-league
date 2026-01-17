@@ -1,4 +1,4 @@
-import { getLeagueAdmin } from "@/lib/auth-utils";
+import { getLeagueMember } from "@/lib/auth-utils";
 import { db } from "@/db";
 import { rounds, matches, matchPlayers, scores, teams, user, holes, seasons } from "@/db/schema";
 import { eq, desc, and, inArray } from "drizzle-orm";
@@ -41,7 +41,7 @@ type ProcessedMatch = {
 
 export default async function LeaderboardPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const league = await getLeagueAdmin(slug);
+    const league = await getLeagueMember(slug);
 
     // 1. Fetch Active/Latest Round for LIVE Leaderboard
     // We look for 'in_progress' first, then 'scheduled' (today?), then 'completed' (most recent)

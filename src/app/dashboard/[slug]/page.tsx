@@ -1,4 +1,4 @@
-import { getLeagueAdmin } from "@/lib/auth-utils";
+import { getLeagueMember } from "@/lib/auth-utils";
 import { db } from "@/db";
 import { rounds, matches, matchPlayers, scores, teams, user, holes, seasons } from "@/db/schema";
 import { eq, desc, and, inArray } from "drizzle-orm";
@@ -42,9 +42,9 @@ type ProcessedMatch = {
     leadingTeam: 'A' | 'B' | 'AS';
 };
 
-export default async function LeagueAdminDashboard({ params }: { params: Promise<{ slug: string }> }) {
+export default async function LeagueDashboard({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const league = await getLeagueAdmin(slug);
+    const league = await getLeagueMember(slug);
 
     // --- LEADERBOARD LOGIC & STATUS ---
     // 1. Actve Round

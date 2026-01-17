@@ -52,9 +52,9 @@ export async function validateMemberRole(organizationId: string, allowedRoles: (
     return { session, membership };
 }
 
-export async function getLeagueAdmin(slug: string) {
+export async function getLeagueMember(slug: string) {
     const session = await auth();
-    if (!session?.user) redirect("/api/auth/signin");
+    if (!session?.user?.id) redirect("/api/auth/signin");
 
     const [league] = await db
         .select({
@@ -70,14 +70,23 @@ export async function getLeagueAdmin(slug: string) {
         .where(
             and(
                 eq(organizations.slug, slug),
-                eq(leagueMembers.userId, session.user.id ?? ""),
-                eq(leagueMembers.role, "admin")
+                eq(leagueMembers.userId, session.user.id)
             )
         )
         .limit(1);
 
     if (!league) {
         redirect("/dashboard");
+    }
+
+    return league;
+}
+
+export async function getLeagueAdmin(slug: string) {
+    const league = await getLeagueMember(slug);
+
+    if (league.role !== "admin") {
+        redirect(`/dashboard/${slug}`);
     }
 
     return league;

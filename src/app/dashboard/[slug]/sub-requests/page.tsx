@@ -8,15 +8,14 @@ import Image from "next/image";
 
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { getLeagueMember } from "@/lib/auth-utils";
 
 export default async function SubRequestsPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const session = await auth();
     const currentUserId = session?.user?.id;
 
-    const [league] = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
-
-    if (!league) return <div className="p-8">League not found</div>;
+    const league = await getLeagueMember(slug);
 
     const openRequests = await db
         .select({

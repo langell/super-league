@@ -1,4 +1,4 @@
-import { getLeagueAdmin } from "@/lib/auth-utils";
+import { getLeagueMember } from "@/lib/auth-utils";
 import { db } from "@/db";
 import { seasons, rounds, courses } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
@@ -8,7 +8,8 @@ import { generateSchedule } from "@/actions/round";
 
 export default async function SchedulePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const league = await getLeagueAdmin(slug);
+    const league = await getLeagueMember(slug);
+    const isAdmin = league.role === "admin";
 
     // Fetch all seasons
     const allSeasons = await db.select().from(seasons).where(eq(seasons.organizationId, league.id)).orderBy(desc(seasons.createdAt));
@@ -83,19 +84,23 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
                                                 <span>{season.name}</span>
                                                 {season.active && <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>}
                                             </div>
-                                            <Link href={`/dashboard/${slug}/schedule/${season.id}/edit`} className="p-1 text-zinc-600 hover:text-white transition-colors">
-                                                <Edit size={14} />
-                                            </Link>
+                                            {isAdmin && (
+                                                <Link href={`/dashboard/${slug}/schedule/${season.id}/edit`} className="p-1 text-zinc-600 hover:text-white transition-colors">
+                                                    <Edit size={14} />
+                                                </Link>
+                                            )}
                                         </div>
                                     </div>
                                 ))
                             )}
                         </div>
 
-                        <Link href={`/dashboard/${slug}/schedule/new`} className="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">
-                            <Plus size={16} />
-                            New Season
-                        </Link>
+                        {isAdmin && (
+                            <Link href={`/dashboard/${slug}/schedule/new`} className="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">
+                                <Plus size={16} />
+                                New Season
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -105,32 +110,34 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
                         <div className="h-full flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-zinc-800 rounded-3xl text-zinc-600">
                             <Calendar size={48} className="mb-4 opacity-50" />
                             <h3 className="text-xl font-bold text-zinc-500">No Active Season</h3>
-                            <p>Create a season on the left to start scheduling rounds.</p>
+                            <p>{isAdmin ? "Create a season on the left to start scheduling rounds." : "No schedule has been created for this league yet."}</p>
                         </div>
                     ) : (
                         <div className="space-y-8">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold">{currentSeason.name} Schedule</h2>
-                                <div className="flex gap-2">
-                                    <form action={generateSchedule}>
-                                        <input type="hidden" name="leagueSlug" value={slug} />
-                                        <input type="hidden" name="seasonId" value={currentSeason.id} />
-                                        <button
-                                            type="submit"
-                                            className="flex items-center gap-2 px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all"
+                                {isAdmin && (
+                                    <div className="flex gap-2">
+                                        <form action={generateSchedule}>
+                                            <input type="hidden" name="leagueSlug" value={slug} />
+                                            <input type="hidden" name="seasonId" value={currentSeason.id} />
+                                            <button
+                                                type="submit"
+                                                className="flex items-center gap-2 px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all"
+                                            >
+                                                <Calendar size={18} />
+                                                Auto-Generate
+                                            </button>
+                                        </form>
+                                        <Link
+                                            href={`/dashboard/${slug}/schedule/${currentSeason.id}/new-round`}
+                                            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/10"
                                         >
-                                            <Calendar size={18} />
-                                            Auto-Generate
-                                        </button>
-                                    </form>
-                                    <Link
-                                        href={`/dashboard/${slug}/schedule/${currentSeason.id}/new-round`}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/10"
-                                    >
-                                        <Plus size={18} />
-                                        Add Round
-                                    </Link>
-                                </div>
+                                            <Plus size={18} />
+                                            Add Round
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
 
                             {scheduledRounds.length === 0 ? (
@@ -166,12 +173,14 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
                                                         }`}>
                                                         {round.status}
                                                     </span>
-                                                    <Link
-                                                        href={`/dashboard/${slug}/schedule/${currentSeason.id}/rounds/${round.id}/edit`}
-                                                        className="p-3 bg-zinc-950 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-                                                    >
-                                                        <Edit size={20} />
-                                                    </Link>
+                                                    {isAdmin && (
+                                                        <Link
+                                                            href={`/dashboard/${slug}/schedule/${currentSeason.id}/rounds/${round.id}/edit`}
+                                                            className="p-3 bg-zinc-950 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                                                        >
+                                                            <Edit size={20} />
+                                                        </Link>
+                                                    )}
                                                     <Link href={`/dashboard/${slug}/schedule/${currentSeason.id}/rounds/${round.id}`} className="p-3 bg-zinc-950 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
                                                         <ChevronRight size={20} />
                                                     </Link>
